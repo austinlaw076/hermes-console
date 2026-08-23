@@ -112,7 +112,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release-evidence/source-sbom release-evidence/artifacts/full \
-            release-evidence/certificates
+            release-evidence/certificates release-public
           cp sbom/*.json release-evidence/source-sbom/
 
           commit="$(git rev-parse HEAD)"
@@ -136,20 +136,37 @@ jobs:
             artifact="$(basename "$apk" .apk)"
             "$apksigner" verify --verbose --print-certs "$apk" \
               > "release-evidence/certificates/$artifact.txt"
+            cp "$apk" release-public/
           done < <(find build/app/outputs/flutter-apk \
             -type f -name '*-full-release.apk' -print0 | sort -z)
+
+          # Keep the complete evidence tree in one uniquely named archive. The
+          # three per-ABI inventories intentionally share their internal
+          # `fullRelease.artifact.json` name and therefore must not be flattened
+          # into individual GitHub Release assets.
           sums="$(mktemp)"
-          find build/app/outputs/flutter-apk release-evidence \
+          find release-evidence \
             -type f ! -name SHA256SUMS -print0 \
             | sort -z | xargs -0 sha256sum > "$sums"
           mv "$sums" release-evidence/SHA256SUMS
+          tar -czf release-public/hermes-console-release-evidence.tar.gz \
+            release-evidence
+
+          # This public manifest contains only basenames of files attached to
+          # the GitHub Release, so `sha256sum -c SHA256SUMS` works directly
+          # after downloading the assets into one directory.
+          (
+            cd release-public
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' \
+              | sort -z | xargs -0 sha256sum > SHA256SUMS
+          )
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-artifacts
           path: |
-            build/app/outputs/flutter-apk/*-full-release.apk
+            release-public/**
             release-evidence/**
           if-no-files-found: error
           retention-days: 30
@@ -174,10 +191,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          mapfile -d '' release_files < <(find release-artifacts -type f \
-            \( -name '*-full-release.apk' -o -name SHA256SUMS \
-               -o -name 'fullRelease.artifact.json' \
-               -o -name '*-full-release.txt' \) -print0 | sort -z)
+          mapfile -d '' release_files < <(find release-artifacts/release-public \
+            -maxdepth 1 -type f -print0 | sort -z)
           test "${#release_files[@]}" -gt 0
           gh release create "$RELEASE_TAG" \
             --title "Hermes Console $RELEASE_TAG" \

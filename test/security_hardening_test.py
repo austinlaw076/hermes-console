@@ -149,5 +149,31 @@ class SbomXmlSecurityTest(unittest.TestCase):
         self.assertEqual(self.sbom.pom_licences(pom), set())
 
 
+class ReleaseWorkflowBoundaryTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.workflow = (ROOT / ".github/workflows/build-apk.yml").read_text(
+            encoding="utf-8"
+        )
+
+    def test_direct_release_builds_only_full_apks(self):
+        self.assertIn("flutter build apk --release --flavor full", self.workflow)
+        self.assertIn("--split-per-abi", self.workflow)
+        self.assertNotIn("flutter build appbundle", self.workflow)
+        self.assertNotIn("--flavor play", self.workflow)
+        self.assertNotIn("--flavor qa", self.workflow)
+
+    def test_public_assets_are_staged_without_flattening_abi_evidence(self):
+        self.assertIn("hermes-console-release-evidence.tar.gz", self.workflow)
+        self.assertIn("release-public/**", self.workflow)
+        self.assertIn("release-artifacts/release-public", self.workflow)
+        self.assertNotIn("-name 'fullRelease.artifact.json'", self.workflow)
+
+    def test_public_checksum_manifest_uses_downloadable_basenames(self):
+        self.assertIn("cd release-public", self.workflow)
+        self.assertIn("-printf '%f\\0'", self.workflow)
+        self.assertIn("xargs -0 sha256sum > SHA256SUMS", self.workflow)
+
+
 if __name__ == "__main__":
     unittest.main()
