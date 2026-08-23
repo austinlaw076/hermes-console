@@ -1,0 +1,26 @@
+{
+  "fixture_version": 1,
+  "profile": "synthetic-profile",
+  "config": {
+    "compression": {
+      "enabled": true,
+      "threshold": 0.5,
+      "target_ratio": 0.2,
+      "protect_last_n": 20
+    },
+    "unrelated_synthetic_key": {"preserve": true}
+  },
+  "schema": {
+    "properties": {
+      "compression": {
+        "type": "object",
+        "properties": {
+          "enabled": {"type": "boolean"},
+          "threshold": {"type": "number", "minimum": 0.1, "maximum": 0.95},
+          "target_ratio": {"type": "number", "minimum": 0.05, "maximum": 0.8},
+          "protect_last_n": {"type": "integer", "minimum": 0, "maximum": 200}
+        }
+      }
+    }
+  }
+}

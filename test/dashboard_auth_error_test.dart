@@ -1,0 +1,211 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_android/core/services/bridge_client.dart';
+import 'package:hermes_android/core/services/connection_manager.dart';
+import 'package:hermes_android/core/utils/api_error.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+
+Future<DashboardAuthException> passwordLoginFailure(
+  http.Response response,
+) async {
+  final client = DashboardClient(
+    host: 'hermes.local',
+    port: 9119,
+    basicUser: 'admin',
+    basicPass: 'secret',
+    httpClientOverride: MockClient((request) async {
+      expect(request.url.path, '/auth/password-login');
+      return response;
+    }),
+  );
+  addTearDown(client.close);
+  try {
+    await client.authHeadersForDiagnostics();
+  } on DashboardAuthException catch (error) {
+    return error;
+  }
+  throw TestFailure('Expected DashboardAuthException');
+}
+
+Widget localizedFailureHost(Locale locale, List<Object> errors) {
+  return MaterialApp(
+    locale: locale,
+    localizationsDelegates: Strings.localizationsDelegates,
+    supportedLocales: Strings.supportedLocales,
+    home: Scaffold(
+      body: Builder(
+        builder: (context) => Column(
+          children: [
+            for (final error in errors)
+              Text(localizedApiError(Strings.of(context), error)),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('loginRequired se produce por señal real del Dashboard', () async {
+    final client = DashboardClient(
+      host: 'hermes.local',
+      port: 9119,
+      httpClientOverride: MockClient((request) async {
+        expect(request.url.path, '/');
+        return http.Response('<form id="provider-form"></form>', 200);
+      }),
+    );
+    addTearDown(client.close);
+
+    await expectLater(
+      client.authHeadersForDiagnostics(),
+      throwsA(
+        isA<DashboardAuthException>().having(
+          (error) => error.code,
+          'code',
+          DashboardAuthFailureCode.loginRequired,
+        ),
+      ),
+    );
+  });
+
+  test(
+    '401, 429, fallo HTTP y cookie ausente tienen códigos estables',
+    () async {
+      final invalid = await passwordLoginFailure(http.Response('', 401));
+      final limited = await passwordLoginFailure(http.Response('', 429));
+      final failed = await passwordLoginFailure(http.Response('', 503));
+      final noCookie = await passwordLoginFailure(
+        http.Response('{"ok":true}', 200),
+      );
+
+      expect(invalid.code, DashboardAuthFailureCode.invalidCredentials);
+      expect(invalid.statusCode, 401);
+      expect(limited.code, DashboardAuthFailureCode.rateLimited);
+      expect(limited.statusCode, 429);
+      expect(failed.code, DashboardAuthFailureCode.loginFailed);
+      expect(failed.statusCode, 503);
+      expect(noCookie.code, DashboardAuthFailureCode.sessionCookieMissing);
+      expect(noCookie.statusCode, 200);
+    },
+  );
+
+  testWidgets('los fallos se presentan mediante ARB en español e inglés', (
+    tester,
+  ) async {
+    const errors = [
+      DashboardAuthException(DashboardAuthFailureCode.loginRequired),
+      DashboardAuthException(
+        DashboardAuthFailureCode.invalidCredentials,
+        statusCode: 401,
+      ),
+      DashboardAuthException(
+        DashboardAuthFailureCode.rateLimited,
+        statusCode: 429,
+      ),
+      DashboardAuthException(
+        DashboardAuthFailureCode.loginFailed,
+        statusCode: 503,
+      ),
+      DashboardAuthException(
+        DashboardAuthFailureCode.sessionCookieMissing,
+        statusCode: 200,
+      ),
+    ];
+
+    await tester.pumpWidget(localizedFailureHost(const Locale('es'), errors));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('requiere iniciar sesión'), findsOneWidget);
+    expect(find.textContaining('usuario o la contraseña'), findsOneWidget);
+    expect(find.textContaining('temporalmente bloqueado'), findsOneWidget);
+    expect(find.textContaining('HTTP 503'), findsOneWidget);
+    expect(find.textContaining('no creó una sesión'), findsOneWidget);
+    expect(find.textContaining('DashboardAuthException'), findsNothing);
+
+    await tester.pumpWidget(localizedFailureHost(const Locale('en'), errors));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('requires sign-in'), findsOneWidget);
+    expect(find.textContaining('username or password'), findsOneWidget);
+    expect(find.textContaining('temporarily blocked'), findsOneWidget);
+    expect(find.textContaining('HTTP 503'), findsOneWidget);
+    expect(find.textContaining('did not create a session'), findsOneWidget);
+    expect(find.textContaining('DashboardAuthException'), findsNothing);
+  });
+
+  testWidgets(
+    'Bridge y validación cron no filtran literales españoles en inglés',
+    (tester) async {
+      final errors = <Object>[
+        const BridgeException(
+          'cron_remove_unconfirmed',
+          'El bridge no confirmó la eliminación del cron.',
+        ),
+        const BridgeException(
+          'attachment_too_large',
+          'El adjunto está vacío o supera el límite permitido.',
+        ),
+        const BridgeException(
+          'image_invalid_type',
+          'El servidor no devolvió una imagen.',
+        ),
+        const BridgeException(
+          'remote_auth_copy',
+          'Token inválido',
+          kind: BridgeErrorKind.auth,
+        ),
+        ArgumentError.value('../job', 'jobId'),
+        ArgumentError.value('../profile', 'profile'),
+      ];
+
+      await tester.pumpWidget(localizedFailureHost(const Locale('en'), errors));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('did not confirm'), findsOneWidget);
+      expect(
+        find.textContaining('attachment is empty or too large'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('did not return an image'), findsOneWidget);
+      expect(find.textContaining('token or permissions'), findsOneWidget);
+      expect(
+        find.textContaining('scheduled task identifier is invalid'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('scheduled-task profile is invalid'),
+        findsOneWidget,
+      );
+      for (final spanish in const [
+        'El bridge',
+        'adjunto está',
+        'El servidor',
+        'Token inválido',
+        'ID de cron',
+        'Perfil de cron',
+      ]) {
+        expect(find.textContaining(spanish), findsNothing);
+      }
+    },
+  );
+
+  test('las superficies auditadas usan el presentador localizado', () {
+    for (final path in const [
+      'lib/core/screens/cron_screen.dart',
+      'lib/core/screens/soul_screen.dart',
+      'lib/core/screens/models_screen.dart',
+      'lib/core/screens/dashboard_setup_screen.dart',
+    ]) {
+      expect(
+        File(path).readAsStringSync(),
+        contains('localizedApiError('),
+        reason: path,
+      );
+    }
+  });
+}

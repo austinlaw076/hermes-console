@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_notification_title">Hermes Voz</string>
+    <string name="voice_notification_active">Escuchando</string>
+    <string name="voice_notification_paused">En pausa</string>
+    <string name="voice_notification_mic_active">Micrófono activo</string>
+    <string name="voice_notification_mic_paused">Micrófono pausado</string>
+    <string name="voice_notification_orb">Estado de voz de Hermes</string>
+    <string name="voice_notification_duration">Duración de la conversación</string>
+    <string name="voice_notification_open_hint">Toca para abrir Hermes</string>
+    <string name="voice_notification_primary_action">Pausar</string>
+    <string name="voice_notification_end_action">Terminar conversación</string>
+</resources>

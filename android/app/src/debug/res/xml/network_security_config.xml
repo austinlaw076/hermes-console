@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DEBUG-only network security config.
+
+  Allows cleartext HTTP for debug builds so the app can reach a Hermes
+  Gateway on a LAN address (e.g. http://192.168.x.x:8642) or a Tailscale
+  peer (http://100.x.x.x:8642) without TLS.
+
+  RELEASE builds do NOT reference this file: they ship their own
+  network_security_config (src/release/res/xml/network_security_config.xml)
+  which also permits cleartext, because self-hosted gateways live on
+  LAN/Tailscale IPs that Android NSC cannot allowlist by CIDR. The
+  mitigation is UX-level: TransportPrivacy warns when a cleartext URL
+  points at a non-private host (lib/core/utils/transport_privacy.dart).
+
+  Android domain-config does not support CIDR ranges, only hostnames.
+  For arbitrary LAN IPs, the cleanest safe approach is base-config
+  cleartextTrafficPermitted="true" scoped to debug only (this file),
+  rather than trying to enumerate all possible RFC-1918 addresses.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <!-- Trust the system CAs (includes Tailscale's own certs). -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

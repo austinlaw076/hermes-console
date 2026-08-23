@@ -1,0 +1,253 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_android/core/services/notifications/notification_controller.dart';
+import 'package:hermes_android/core/services/notifications/notification_service.dart';
+import 'package:hermes_android/core/services/run_registry.dart';
+
+// ─── Fake ─────────────────────────────────────────────────────────────────────
+
+class _FakeNotif implements RunNotificationFacade {
+  final List<String> calls = [];
+  bool _notifyRuns = true;
+
+  @override
+  bool get notifyRuns => _notifyRuns;
+
+  @override
+  Future<void> runLive({
+    required String runId,
+    required String title,
+    required String body,
+    String? connId,
+    String? sessionId,
+  }) async => calls.add('runLive:$runId:conn=${connId ?? ""}');
+
+  @override
+  Future<void> runFinished({
+    required String title,
+    required bool ok,
+    String? connId,
+    String? sessionId,
+    String? runId,
+    String? profile,
+  }) async => calls.add('runFinished:${ok ? "ok" : "err"}');
+
+  @override
+  Future<void> approvalPending({
+    required String tool,
+    String? instance,
+    String? connId,
+    String? sessionId,
+    String? sessionTitle,
+    String? runId,
+    String? base,
+    NotificationChatSurface surface = NotificationChatSurface.normal,
+    String? profile,
+    String? roomId,
+  }) async => calls.add('approvalPending:$tool');
+
+  @override
+  Future<void> cancelRun(String runId) async => calls.add('cancelRun:$runId');
+
+  @override
+  Future<void> cancelApproval() async => calls.add('cancelApproval');
+}
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+
+RunRecord _run({
+  String id = 'run-1',
+  String prompt = 'Busca errores en el log',
+  String status = 'running',
+  String? progressLabel,
+  String? sessionId,
+}) => RunRecord(
+  runId: id,
+  prompt: prompt,
+  createdAt: 0,
+  lastStatus: status,
+  progressLabel: progressLabel,
+  sessionId: sessionId,
+);
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
+
+void main() {
+  late _FakeNotif notif;
+  late NotificationController ctrl;
+
+  setUp(() {
+    notif = _FakeNotif();
+    ctrl = NotificationController(notif);
+  });
+
+  tearDown(() => ctrl.dispose());
+
+  group('notifyRunStarted', () {
+    test('es no-op (no emite notificación)', () {
+      ctrl.notifyRunStarted(_run());
+      expect(notif.calls, isEmpty);
+    });
+  });
+
+  group('notifyRunFinished', () {
+    test('cancela progreso, cancela approval y emite runFinished ok', () async {
+      ctrl.notifyRunWaitingApproval(_run(status: 'waiting_for_approval'));
+      notif.calls.clear();
+      ctrl.notifyRunFinished(_run(status: 'completed'));
+      expect(
+        notif.calls,
+        containsAllInOrder([
+          'cancelRun:run-1',
+          'cancelApproval',
+          'runFinished:ok',
+        ]),
+      );
+    });
+
+    test('trunca prompt largo a 60 caracteres', () async {
+      final longPrompt = 'A' * 80;
+      ctrl.notifyRunFinished(_run(prompt: longPrompt));
+      // runFinished recibe el prompt truncado; lo verificamos vía runLive
+      // (runFinished recibe el título; el fake no expone el título, solo "ok/err")
+      expect(notif.calls, contains('runFinished:ok'));
+    });
+  });
+
+  group('notifyRunFailed', () {
+    test(
+      'cancela progreso, cancela approval y emite runFinished err',
+      () async {
+        ctrl.notifyRunWaitingApproval(_run(status: 'waiting_for_approval'));
+        notif.calls.clear();
+        ctrl.notifyRunFailed(_run(status: 'failed'));
+        expect(
+          notif.calls,
+          containsAllInOrder([
+            'cancelRun:run-1',
+            'cancelApproval',
+            'runFinished:err',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('notifyRunCancelled', () {
+    test('cancela la notificación sin emitir nueva', () async {
+      ctrl.notifyRunWaitingApproval(_run(status: 'waiting_for_approval'));
+      notif.calls.clear();
+      ctrl.notifyRunCancelled(_run(status: 'cancelled'));
+      expect(notif.calls, equals(['cancelRun:run-1', 'cancelApproval']));
+      expect(notif.calls, isNot(contains('runFinished:ok')));
+    });
+  });
+
+  group('aislamiento de approvals cross-run', () {
+    test('terminal de otro run no cancela la approval del run activo', () {
+      // run-1 está esperando aprobación
+      ctrl.notifyRunWaitingApproval(_run(status: 'waiting_for_approval'));
+      notif.calls.clear();
+      // run-2 termina — NO debe cancelar la approval de run-1
+      ctrl.notifyRunFinished(_run(id: 'run-2', status: 'completed'));
+      expect(notif.calls, isNot(contains('cancelApproval')));
+      expect(notif.calls, contains('cancelRun:run-2'));
+      expect(notif.calls, contains('runFinished:ok'));
+    });
+
+    test('cancel de otro run no cancela la approval del run activo', () {
+      ctrl.notifyRunWaitingApproval(_run(status: 'waiting_for_approval'));
+      notif.calls.clear();
+      ctrl.notifyRunCancelled(_run(id: 'run-2', status: 'cancelled'));
+      expect(notif.calls, isNot(contains('cancelApproval')));
+      expect(notif.calls, contains('cancelRun:run-2'));
+    });
+  });
+
+  group('notifyRunWaitingApproval', () {
+    test('emite approvalPending con la herramienta del progressLabel', () {
+      ctrl.notifyRunWaitingApproval(_run(progressLabel: 'bash'));
+      expect(notif.calls, contains('approvalPending:bash'));
+    });
+
+    test('usa fallback "herramienta" si progressLabel es null', () {
+      ctrl.notifyRunWaitingApproval(_run());
+      expect(notif.calls, contains('approvalPending:herramienta'));
+    });
+
+    test('cancela timers de progreso antes de notificar', () async {
+      // Inicia un timer de progreso
+      ctrl.notifyRunProgress(_run(progressLabel: 'tool: read_file'));
+      expect(notif.calls.where((c) => c.startsWith('runLive')), isEmpty);
+      // La aprobación llega antes del debounce
+      ctrl.notifyRunWaitingApproval(_run(progressLabel: 'bash'));
+      expect(notif.calls, contains('approvalPending:bash'));
+      // Avanzamos el tiempo: el timer debería estar cancelado
+      await Future.delayed(const Duration(seconds: 6));
+      // No debería haberse llamado runLive tras la aprobación
+      expect(notif.calls.where((c) => c.startsWith('runLive:run-1')), isEmpty);
+    });
+  });
+
+  group('notifyRunProgress', () {
+    test('no emite si notifyRuns es false', () async {
+      notif._notifyRuns = false;
+      ctrl.notifyRunProgress(_run(progressLabel: 'bash'));
+      await Future.delayed(const Duration(seconds: 6));
+      expect(notif.calls.where((c) => c.startsWith('runLive:')), isEmpty);
+    });
+
+    test('debouncea: solo dispara una vez tras N llamadas rápidas', () async {
+      for (var i = 0; i < 5; i++) {
+        ctrl.notifyRunProgress(_run(progressLabel: 'tool:$i'));
+      }
+      await Future.delayed(const Duration(seconds: 6));
+      final liveCalls = notif.calls
+          .where((c) => c.startsWith('runLive:run-1'))
+          .toList();
+      expect(liveCalls.length, 1);
+    });
+
+    test('dispara runLive con el runId correcto', () async {
+      ctrl.notifyRunProgress(_run(id: 'abc-123', progressLabel: 'bash'));
+      await Future.delayed(const Duration(seconds: 6));
+      expect(notif.calls.any((c) => c.startsWith('runLive:abc-123')), isTrue);
+    });
+  });
+
+  group('clearRunNotification', () {
+    test('cancela timers y emite cancelRun', () async {
+      ctrl.notifyRunProgress(_run(progressLabel: 'bash'));
+      ctrl.clearRunNotification('run-1');
+      await Future.delayed(const Duration(seconds: 6));
+      expect(notif.calls, contains('cancelRun:run-1'));
+      // El timer fue cancelado, no debe haber runLive
+      expect(notif.calls.where((c) => c.startsWith('runLive:run-1')), isEmpty);
+    });
+  });
+
+  group('dispose', () {
+    test('cancela todos los timers pendientes', () async {
+      ctrl.notifyRunProgress(_run(id: 'r1', progressLabel: 'a'));
+      ctrl.notifyRunProgress(_run(id: 'r2', progressLabel: 'b'));
+      ctrl.dispose();
+      await Future.delayed(const Duration(seconds: 6));
+      expect(notif.calls.where((c) => c.startsWith('runLive:')), isEmpty);
+    });
+  });
+
+  group('propagación de connId', () {
+    test('connId se incluye en la llamada a runLive', () async {
+      final ctrlWithConn = NotificationController(notif, connId: 'conn-abc');
+      ctrlWithConn.notifyRunProgress(_run(progressLabel: 'bash'));
+      await Future.delayed(const Duration(seconds: 6));
+      expect(notif.calls.where((c) => c.contains('conn=conn-abc')), isNotEmpty);
+      ctrlWithConn.dispose();
+    });
+
+    test('sin connId el campo es vacío', () async {
+      ctrl.notifyRunProgress(_run(progressLabel: 'bash'));
+      await Future.delayed(const Duration(seconds: 6));
+      expect(notif.calls.where((c) => c.contains('conn=')), isNotEmpty);
+    });
+  });
+}

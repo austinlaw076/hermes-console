@@ -1,0 +1,156 @@
+name: Code Quality Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.44.1'
+          channel: 'stable'
+
+      - name: Set up Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+        id: pub_get
+
+      - name: Install REUSE
+        run: python3 -m pip install --disable-pip-version-check reuse==6.2.0
+
+      - name: Verify REUSE compliance
+        run: reuse lint
+
+      - name: Scan Git history with Gitleaks
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/repo:ro" \
+            zricethezav/gitleaks@sha256:cdbb7c955abce02001a9f6c9f602fb195b7fadc1e812065883f695d1eeaba854 \
+            git /repo --no-banner --redact=100
+
+      - name: Scan verified and unknown secrets with TruffleHog
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/repo:ro" \
+            trufflesecurity/trufflehog@sha256:ff4c95e9df7d645daf2140e3ca1039031c63106268d5fbb25feb43ceca1bcc33 \
+            --no-update --fail --fail-on-scan-errors \
+            --exclude-detectors=URI --results=verified,unknown \
+            --json git file:///repo \
+            > "$RUNNER_TEMP/trufflehog.jsonl"
+          test ! -s "$RUNNER_TEMP/trufflehog.jsonl"
+
+      - name: Verify Gradle wrapper and source SBOMs
+        run: |
+          echo "76805e32c009c0cf0dd5d206bddc9fb22ea42e84db904b764f3047de095493f3  android/gradle/wrapper/gradle-wrapper.jar" \
+            | sha256sum -c -
+          ./tool/sbom/generate.sh
+          git diff --exit-code -- sbom
+
+      - name: Run Python security and SBOM tests
+        run: python3 -m unittest discover -s test -p '*_test.py'
+
+      # ── Step 1: Static analysis ──────────────────────────
+      - name: Static analysis
+        id: analyze
+        continue-on-error: true
+        run: |
+          flutter analyze --fatal-infos 2>&1 | tee analyze_output.txt
+          exit "${PIPESTATUS[0]}"
+
+      # ── Step 2: Run tests ────────────────────────────────
+      - name: Run tests
+        id: test
+        continue-on-error: true
+        run: |
+          flutter test --concurrency=1 --reporter=expanded 2>&1 | tee test_output.txt
+          exit "${PIPESTATUS[0]}"
+
+      # ── Step 3: Summary & failure report ─────────────────
+      - name: Failure summary
+        if: steps.analyze.outcome != 'success' || steps.test.outcome != 'success'
+        env:
+          ANALYZE_OUTCOME: ${{ steps.analyze.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+        run: |
+          {
+            echo "## Quality checks failed"
+            echo ""
+
+            if [ "$ANALYZE_OUTCOME" != "success" ]; then
+              echo "### Static analysis failed"
+              echo '```'
+              cat analyze_output.txt
+              echo '```'
+              echo ""
+            else
+              echo "### Static analysis passed"
+              echo ""
+            fi
+
+            if [ "$TEST_OUTCOME" != "success" ]; then
+              echo "### Tests failed"
+              echo '```'
+              cat test_output.txt
+              echo '```'
+            else
+              echo "### All tests passed"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Step 4: Pass/fail enforcement ────────────────────
+      - name: Enforce checks
+        if: steps.analyze.outcome != 'success' || steps.test.outcome != 'success'
+        env:
+          ANALYZE_OUTCOME: ${{ steps.analyze.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+        run: |
+          echo "──────────────────────────────────────────────"
+          echo "Quality gate blocked - see summary above."
+          echo ""
+          if [ "$ANALYZE_OUTCOME" != "success" ]; then
+            echo "   FAILED: flutter analyze"
+          else
+            echo "   PASSED:  flutter analyze"
+          fi
+          if [ "$TEST_OUTCOME" != "success" ]; then
+            echo "   FAILED: flutter test"
+          else
+            echo "   PASSED:  flutter test"
+          fi
+          echo "──────────────────────────────────────────────"
+          exit 1
+
+      - name: All checks passed
+        if: steps.analyze.outcome == 'success' && steps.test.outcome == 'success'
+        run: |
+          {
+            echo "## All quality checks passed"
+            echo "- Static analysis: clean"
+            echo "- All tests: passing"
+          } >> "$GITHUB_STEP_SUMMARY"

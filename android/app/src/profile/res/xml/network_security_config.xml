@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  PROFILE network security config.
+
+  Replica la política de release para que la APK qaProfile mida el producto
+  real con gateways self-hosted en LAN/Tailscale. Android no permite expresar
+  rangos CIDR aquí; TransportPrivacy.requireAllowed sigue bloqueando HTTP/WS
+  público antes de usar credenciales, prompts o audio.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -1,0 +1,18 @@
+{
+  "fixture_version": 1,
+  "backend_identity": "synthetic-legacy-v1",
+  "capabilities": {
+    "commands.catalog": "unsupported",
+    "complete.slash": "unsupported",
+    "slash.exec": "legacy",
+    "session.context_breakdown": "unsupported"
+  },
+  "legacy_commands": [
+    {
+      "name": "help",
+      "description": "Show locally known help",
+      "scope": "local",
+      "risk": "read"
+    }
+  ]
+}

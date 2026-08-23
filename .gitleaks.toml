@@ -1,0 +1,8 @@
+title = "Hermes Console gitleaks configuration"
+
+[[allowlists]]
+description = "SharedPreferences key; not a credential"
+regexTarget = "match"
+regexes = [
+  '''_executionStateKey = 'bg_cron_executions_v2' ''',
+]

@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    {
+      "groupPrefix": "androidx.",
+      "license": "Apache-2.0",
+      "evidence": "https://android.googlesource.com/platform/frameworks/support/+/androidx-main/LICENSE.txt"
+    },
+    {
+      "group": "com.getkeepsafe.relinker",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/KeepSafe/ReLinker/blob/master/LICENSE"
+    },
+    {
+      "group": "com.google.code.findbugs",
+      "artifact": "jsr305",
+      "license": "Apache-2.0",
+      "evidence": "https://repo1.maven.org/maven2/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.pom"
+    },
+    {
+      "group": "com.google.code.gson",
+      "license": "Apache-2.0",
+      "evidence": "https://repo1.maven.org/maven2/com/google/code/gson/gson/2.13.2/gson-2.13.2.pom"
+    },
+    {
+      "group": "com.google.crypto.tink",
+      "license": "Apache-2.0",
+      "evidence": "https://repo1.maven.org/maven2/com/google/crypto/tink/tink-android/1.21.0/tink-android-1.21.0.pom"
+    },
+    {
+      "group": "com.google.errorprone",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/google/error-prone/blob/master/COPYING"
+    },
+    {
+      "group": "com.google.guava",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/google/guava/blob/master/LICENSE"
+    },
+    {
+      "group": "com.google.zxing",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/zxing/zxing/blob/master/LICENSE"
+    },
+    {
+      "group": "com.journeyapps",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/journeyapps/zxing-android-embedded/blob/master/COPYING"
+    },
+    {
+      "group": "com.squareup.okio",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/square/okio/blob/master/LICENSE.txt"
+    },
+    {
+      "group": "commons-io",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/apache/commons-io/blob/master/LICENSE.txt"
+    },
+    {
+      "group": "io.flutter",
+      "license": "BSD-3-Clause",
+      "evidence": "https://github.com/flutter/flutter/blob/master/LICENSE"
+    },
+    {
+      "group": "org.apache.commons",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/apache/commons-imaging/blob/master/LICENSE.txt"
+    },
+    {
+      "group": "org.apache.tika",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/apache/tika/blob/main/LICENSE.txt"
+    },
+    {
+      "group": "org.jetbrains.kotlin",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/JetBrains/kotlin/blob/master/license/LICENSE.txt"
+    },
+    {
+      "group": "org.jetbrains.kotlinx",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/Kotlin/kotlinx.coroutines/blob/master/LICENSE.txt"
+    },
+    {
+      "group": "org.jetbrains",
+      "artifact": "annotations",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/JetBrains/java-annotations/blob/master/LICENSE.txt"
+    },
+    {
+      "group": "org.jspecify",
+      "license": "Apache-2.0",
+      "evidence": "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.pom"
+    },
+    {
+      "group": "org.slf4j",
+      "license": "MIT",
+      "evidence": "https://www.slf4j.org/license.html"
+    }
+  ]
+}

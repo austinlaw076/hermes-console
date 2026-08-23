@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="new_session"
+        android:shortcutLongLabel="@string/new_session_shortcut_long_label"
+        android:shortcutShortLabel="@string/new_session_shortcut_short_label">
+        <intent
+            android:action="dev.xpetalab.hermesconsole.action.NEW_SESSION"
+            android:targetClass="com.hermesagent.hermes_android.MainActivity"
+            android:targetPackage="@string/new_session_target_package">
+            <extra
+                android:name="contract_version"
+                android:value="1" />
+            <extra
+                android:name="source"
+                android:value="shortcut" />
+        </intent>
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+</shortcuts>

@@ -1,0 +1,83 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+
+# Localizaciones generadas por gen-l10n (generate: true). Las fuentes
+# traducibles son lib/l10n/*.arb; el .dart se regenera en pub get/build.
+lib/l10n/app_localizations*.dart
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Proyecto Android-only (ADR-024). Flutter puede regenerar un Runner iOS al
+# resolver plugins; se ignora completo hasta que exista soporte iOS real.
+/ios/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/build/
+/android/.gradle/
+/release-apks/
+/dist/
+
+# Local keystore properties
+/key.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+google-services.json
+.env
+.env.*
+!.env.example
+
+# Salida de goldens fallidos y caché de herramientas (no versionar)
+test/failures/
+.understand-anything/
+releases/
+/artifacts/
+
+# Private agent state and handoff material are not public source. The tracked
+# root AGENTS.md contains only public release-safety rules.
+/.claude/
+/.serena/
+/.rollback-snapshots/
+/docs/agent-handoffs/

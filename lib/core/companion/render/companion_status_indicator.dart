@@ -1,0 +1,61 @@
+import 'package:flutter/material.dart';
+
+import '../../widgets/hermes_spark_mascot.dart';
+import '../../widgets/hermes_status_indicator.dart';
+import '../models/companion_presence_level.dart';
+import '../state/companion_controller.dart';
+import 'companion_message_presence.dart';
+
+/// Indicador de estado de un turno (feature 006 FASE 2) que muestra la
+/// **mascota** del Companion (corriendo / reposo / fallo) en lugar del spinner
+/// genérico [HermesStatusIndicator] cuando la presencia está activa.
+///
+/// Así, durante el streaming, el usuario ve a su mascota "pensando/corriendo"
+/// en la tarjeta de actividad, no un círculo de carga. Si el Companion está
+/// apagado, deshabilitado o no hay controller, **cae al pulso cuadrado de
+/// Hermes Desktop** (StatusPulse) para los estados de trabajo; el indicador
+/// clásico queda reservado a resultados (ok/error/offline).
+class CompanionStatusIndicator extends StatelessWidget {
+  /// Controller del Companion. Si es null, se usa el fallback sin mascota.
+  final CompanionController? companion;
+  final HermesSparkMood mood;
+  final double size;
+
+  const CompanionStatusIndicator({
+    super.key,
+    required this.companion,
+    required this.mood,
+    this.size = 24,
+  });
+
+  /// Señal de estado sin mascota. Los estados de trabajo (conectando,
+  /// esperando, pensando) usan el pulso cuadrado discreto de Desktop en vez
+  /// del spinner circular, que a tamaño de mascota (42-88 px) resultaba
+  /// tosco. El lado del cuadrado se mantiene pequeño aunque el hueco
+  /// reservado sea grande.
+  Widget _fallback() {
+    return switch (mood) {
+      HermesSparkMood.connecting ||
+      HermesSparkMood.waiting ||
+      HermesSparkMood.thinking => HermesStatusPulse(size: size >= 64 ? 16 : 12),
+      _ => HermesStatusIndicator(size: size, mood: mood),
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = companion;
+    if (c == null) return _fallback();
+    return AnimatedBuilder(
+      animation: c,
+      builder: (context, _) {
+        if (c.isInitialized &&
+            c.enabled &&
+            c.presenceLevel.showsStatusPresence) {
+          return CompanionMessagePresence(companion: c, mood: mood, size: size);
+        }
+        return _fallback();
+      },
+    );
+  }
+}

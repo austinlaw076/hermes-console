@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Protege recursos que SOLO se referencian desde código Dart (invisibles para el
+  resource shrinker de Android). Sin esto, al activar isShrinkResources en release
+  (ver TODO en app/build.gradle.kts) el shrinker borra el icono de notificación
+  y `FlutterLocalNotificationsPlugin.initialize()` falla con invalid_icon →
+  TODAS las notificaciones quedan suprimidas (init FALLÓ → _available=false).
+
+  ic_stat_hermes lo usa NotificationService (AndroidInitializationSettings +
+  AndroidNotificationDetails.icon). No quitar de esta lista.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_hermes" />

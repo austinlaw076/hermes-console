@@ -1,0 +1,14 @@
+schema_version=1
+project=google_perfetto
+release=v57.2
+release_tag_object=24bdfb9dfa2dc92883761426dd94259756fa197e
+release_commit=da1d152cff27890903d158fe96751de3aab883cc
+bootstrap_manifest_url=https://raw.githubusercontent.com/google/perfetto/v57.2/tools/trace_processor
+bootstrap_manifest_sha256=382e1e662af67daae681fabbc59d407bf5e69c8a017b5f396985183c7d19ed21
+bootstrap_manifest_declared_release=v56.1
+artifact_provenance=direct_luci_release_path_and_pinned_digest
+artifact_platform=linux-amd64
+artifact_file=trace_processor_shell-v57.2-linux-amd64
+artifact_url=https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v57.2/linux-amd64/trace_processor_shell
+artifact_size_bytes=14008280
+artifact_sha256=55ba613fc6d4f71df81eee2dbfc293020063655c241b3e314bff75345b802684

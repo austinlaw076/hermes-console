@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="600" viewBox="0 0 1600 600" role="img" aria-labelledby="title desc">
+  <title id="title">Hermes Console</title>
+  <desc id="desc">Hermes Console repository banner using the original Hermes Console identity and a connected agent status.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08090b"/>
+      <stop offset="0.6" stop-color="#11100e"/>
+      <stop offset="1" stop-color="#181008"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="36%" cy="48%" r="55%">
+      <stop offset="0" stop-color="#f4b45f" stop-opacity="0.32"/>
+      <stop offset="0.45" stop-color="#e8821c" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#e8821c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="titleGold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f4b45f"/>
+      <stop offset="1" stop-color="#e8821c"/>
+    </linearGradient>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
+      <path d="M42 0H0V42" fill="none" stroke="#f4b45f" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+    <clipPath id="frame"><rect x="16" y="16" width="1568" height="568" rx="44"/></clipPath>
+    <clipPath id="logoCrop"><circle cx="318" cy="300" r="222"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect x="16" y="16" width="1568" height="568" rx="44" fill="url(#background)"/>
+    <rect x="16" y="16" width="1568" height="568" fill="url(#grid)"/>
+    <rect x="16" y="16" width="1568" height="568" fill="url(#halo)"/>
+
+    <g opacity="0.72" fill="none" stroke="#e8821c">
+      <path d="M-42 463C211 588 437 529 559 361C689 183 901 120 1198 157C1361 177 1497 149 1648 57" stroke-opacity="0.12" stroke-width="2"/>
+      <path d="M-64 497C231 640 493 568 627 386C743 228 927 177 1194 204C1373 222 1509 183 1668 91" stroke-opacity="0.07" stroke-width="1"/>
+      <path d="M1051 84h246l42 42h199" stroke-opacity="0.18"/>
+      <path d="M1115 514h223l29-29h171" stroke-opacity="0.12"/>
+    </g>
+
+    <circle cx="318" cy="300" r="226" fill="#08090b" stroke="#f4b45f" stroke-opacity="0.24" stroke-width="2"/>
+    <image href="hermes_logo_light.png" x="78" y="60" width="480" height="480" preserveAspectRatio="xMidYMid slice" clip-path="url(#logoCrop)"/>
+    <circle cx="318" cy="300" r="222" fill="#08090b" fill-opacity="0.12"/>
+    <circle cx="318" cy="300" r="222" fill="none" stroke="#f4b45f" stroke-opacity="0.42" stroke-width="3"/>
+
+    <g font-family="Inter, Arial, Helvetica, sans-serif">
+      <g transform="translate(585 102)">
+        <rect width="272" height="38" rx="19" fill="#e8821c" fill-opacity="0.11" stroke="#e8821c" stroke-opacity="0.48"/>
+        <circle cx="21" cy="19" r="4" fill="#e8821c"/>
+        <text x="148" y="24" text-anchor="middle" fill="#f4b45f" font-size="14" font-weight="700" letter-spacing="1.8">ANDROID · OPEN SOURCE</text>
+      </g>
+
+      <text x="580" y="238" fill="#f2f2f2" font-size="104" font-weight="750" letter-spacing="-4">HERMES</text>
+      <text x="580" y="337" fill="url(#titleGold)" font-size="104" font-weight="750" letter-spacing="-4">CONSOLE</text>
+      <text x="586" y="389" fill="#a6a29c" font-size="24" font-weight="450" letter-spacing="0.3">Your self-hosted agent. In your pocket.</text>
+
+      <g transform="translate(585 438)">
+        <rect width="598" height="70" rx="16" fill="#070808" stroke="#36312b"/>
+        <rect x="1" y="1" width="5" height="68" rx="3" fill="#e8821c"/>
+        <text x="30" y="43" fill="#f4b45f" font-family="JetBrains Mono, Consolas, monospace" font-size="20">&gt; agent status</text>
+        <circle cx="374" cy="35" r="7" fill="#36d45a"/>
+        <text x="393" y="43" fill="#d8d8d8" font-family="JetBrains Mono, Consolas, monospace" font-size="18" letter-spacing="2">CONNECTED</text>
+      </g>
+    </g>
+
+  </g>
+  <rect x="16" y="16" width="1568" height="568" rx="44" fill="none" stroke="#332a21" stroke-width="2"/>
+</svg>

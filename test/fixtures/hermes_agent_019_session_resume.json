@@ -1,0 +1,95 @@
+{
+  "session_id": "runtime019",
+  "resumed": "20260720_101500_fixture",
+  "message_count": 3,
+  "messages": [
+    {
+      "role": "user",
+      "text": "hola desde el móvil"
+    },
+    {
+      "role": "assistant",
+      "text": "respuesta persistida",
+      "reasoning": "resumen del razonamiento",
+      "reasoning_content": "contenido de razonamiento",
+      "reasoning_details": [
+        {
+          "type": "summary_text",
+          "text": "resumen"
+        }
+      ],
+      "codex_reasoning_items": [
+        {
+          "type": "reasoning",
+          "id": "reasoning-1"
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "name": "web_search",
+      "context": "consulta de prueba"
+    }
+  ],
+  "info": {
+    "model": "gpt-5.5-codex",
+    "provider": "openai-codex",
+    "reasoning_effort": "high",
+    "service_tier": "priority",
+    "fast": true,
+    "yolo": false,
+    "approval_mode": "manual",
+    "tools": {
+      "web": [
+        "web_search"
+      ]
+    },
+    "skills": {
+      "installed": [
+        "research"
+      ]
+    },
+    "cwd": "/srv/hermes/workspace",
+    "branch": "main",
+    "project": {
+      "id": "project-1",
+      "slug": "hermes-mobile",
+      "name": "Hermes Mobile",
+      "primary_path": "/srv/hermes/workspace"
+    },
+    "personality": "",
+    "running": true,
+    "title": "Sesión 0.19",
+    "stored_session_id": "20260720_101500_fixture",
+    "desktop_contract": 4,
+    "version": "0.19.0",
+    "release_date": "2026-07-20",
+    "update_behind": 0,
+    "update_command": "hermes update",
+    "usage": {
+      "calls": 4,
+      "input": 1200,
+      "output": 300,
+      "total": 1500,
+      "context_used": 1600,
+      "context_max": 128000,
+      "context_percent": 1.25,
+      "cost_usd": 0.0125
+    },
+    "profile_name": "default",
+    "mcp_servers": [],
+    "system_prompt": "fixture redactada"
+  },
+  "inflight": {
+    "assistant": "respuesta parcial",
+    "streaming": true,
+    "user": "continúa con el análisis"
+  },
+  "queued": {
+    "user": "y añade las fuentes"
+  },
+  "running": true,
+  "session_key": "20260720_101500_fixture",
+  "started_at": 1784542500.25,
+  "status": "working"
+}

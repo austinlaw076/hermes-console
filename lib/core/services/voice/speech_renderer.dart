@@ -1,0 +1,542 @@
+/// Representación oral, local y determinista de una respuesta Markdown.
+///
+/// La pantalla conserva el Markdown original. Este renderer solo produce la
+/// proyección que llega al TTS: sin URLs, delimitadores visuales ni código, y
+/// con fronteras semánticas que permiten introducir pausas cancelables.
+enum NarrationPause {
+  none,
+  short,
+  medium,
+  long;
+
+  Duration get duration => switch (this) {
+    NarrationPause.none => Duration.zero,
+    NarrationPause.short => const Duration(milliseconds: 120),
+    NarrationPause.medium => const Duration(milliseconds: 250),
+    NarrationPause.long => const Duration(milliseconds: 400),
+  };
+}
+
+enum NarrationSourceKind {
+  heading,
+  paragraph,
+  listItem,
+  quote,
+  tableRow,
+  codeNotice,
+}
+
+class NarrationSegment {
+  final String text;
+  final NarrationSourceKind sourceKind;
+  final NarrationPause pauseAfter;
+
+  const NarrationSegment(this.text, this.sourceKind, this.pauseAfter);
+
+  NarrationSegment copyWith({NarrationPause? pauseAfter}) =>
+      NarrationSegment(text, sourceKind, pauseAfter ?? this.pauseAfter);
+}
+
+class SpeechRenderer {
+  final String language;
+
+  const SpeechRenderer({required this.language});
+
+  bool get _isEnglish => language.toLowerCase().startsWith('en');
+
+  String get _linkWord => _isEnglish ? 'link' : 'enlace';
+  String get _codeNotice =>
+      _isEnglish ? 'Code block omitted.' : 'Bloque de código omitido.';
+
+  List<NarrationSegment> render(String markdown) {
+    var source = markdown
+        .replaceAll(
+          RegExp(
+            r'\x1B\[[0-9;?]*[ -/]*[@-~]|\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)',
+          ),
+          ' ',
+        )
+        .replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'), ' ');
+    if (source.trim().isEmpty) return const [];
+
+    final segments = <NarrationSegment>[];
+    final paragraph = <String>[];
+    var inFence = false;
+    var fenceNoticeAdded = false;
+
+    void elevateLastPause(NarrationPause pause) {
+      if (segments.isEmpty) return;
+      final current = segments.last;
+      if (current.pauseAfter.index >= pause.index) return;
+      segments[segments.length - 1] = current.copyWith(pauseAfter: pause);
+    }
+
+    void append(String raw, NarrationSourceKind kind, NarrationPause pause) {
+      final clean = _cleanInline(raw);
+      if (clean.isEmpty) return;
+      segments.add(
+        NarrationSegment(_withTerminalPunctuation(clean), kind, pause),
+      );
+    }
+
+    void flushParagraph([NarrationPause pause = NarrationPause.medium]) {
+      if (paragraph.isEmpty) return;
+      append(paragraph.join(' '), NarrationSourceKind.paragraph, pause);
+      paragraph.clear();
+    }
+
+    for (final rawLine in source.split('\n')) {
+      final trimmed = rawLine.trim();
+
+      if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
+        if (!inFence) {
+          flushParagraph(NarrationPause.long);
+          inFence = true;
+          if (!fenceNoticeAdded) {
+            segments.add(
+              NarrationSegment(
+                _codeNotice,
+                NarrationSourceKind.codeNotice,
+                NarrationPause.long,
+              ),
+            );
+            fenceNoticeAdded = true;
+          }
+        } else {
+          inFence = false;
+        }
+        continue;
+      }
+      if (inFence) continue;
+
+      if (trimmed.isEmpty) {
+        flushParagraph(NarrationPause.long);
+        elevateLastPause(NarrationPause.long);
+        continue;
+      }
+
+      if (_isNonNarrativeReferenceLine(trimmed)) {
+        flushParagraph(NarrationPause.medium);
+        continue;
+      }
+
+      if (RegExp(r'^\s*([-*_])(?:\s*\1){2,}\s*$').hasMatch(rawLine)) {
+        flushParagraph(NarrationPause.long);
+        elevateLastPause(NarrationPause.long);
+        continue;
+      }
+
+      final heading = RegExp(r'^\s*#{1,6}\s*(.+)$').firstMatch(rawLine);
+      if (heading != null) {
+        flushParagraph(NarrationPause.long);
+        append(
+          heading.group(1) ?? '',
+          NarrationSourceKind.heading,
+          NarrationPause.long,
+        );
+        continue;
+      }
+
+      final list = RegExp(
+        r'^\s*(?:[-*+] |\d+[.)]\s+)(.+)$',
+      ).firstMatch(rawLine);
+      if (list != null) {
+        flushParagraph(NarrationPause.medium);
+        append(
+          list.group(1) ?? '',
+          NarrationSourceKind.listItem,
+          NarrationPause.medium,
+        );
+        continue;
+      }
+
+      final quote = RegExp(r'^\s*>+\s*(.+)$').firstMatch(rawLine);
+      if (quote != null) {
+        flushParagraph(NarrationPause.medium);
+        append(
+          quote.group(1) ?? '',
+          NarrationSourceKind.quote,
+          NarrationPause.medium,
+        );
+        continue;
+      }
+
+      if (trimmed.contains('|')) {
+        flushParagraph(NarrationPause.medium);
+        if (RegExp(r'^\|?\s*[: -]+(?:\|\s*[: -]+)+\|?$').hasMatch(trimmed)) {
+          continue;
+        }
+        final cells = trimmed
+            .split('|')
+            .map((cell) => _cleanInline(cell))
+            .where((cell) => cell.isNotEmpty)
+            .toList();
+        if (cells.isNotEmpty) {
+          append(
+            cells.join(', '),
+            NarrationSourceKind.tableRow,
+            NarrationPause.short,
+          );
+        }
+        continue;
+      }
+
+      paragraph.add(trimmed);
+    }
+    flushParagraph(NarrationPause.long);
+    elevateLastPause(NarrationPause.long);
+    return List.unmodifiable(segments);
+  }
+
+  bool _isNonNarrativeReferenceLine(String raw) {
+    var line = raw.trim();
+    var previous = '';
+    while (line != previous) {
+      previous = line;
+      line = line
+          .replaceFirst(
+            RegExp(r'^(?:>+\s*|#{1,6}\s*|(?:[-+*]|\d+[.)])\s+)'),
+            '',
+          )
+          .trimLeft();
+    }
+    // This normalization is only used to classify narration. It deliberately
+    // leaves the Markdown shown in the chat untouched.
+    line = line.replaceAll(RegExp(r'[*_~`]'), '').trim();
+    if (line.isEmpty) return false;
+    if (RegExp(
+      r'^(?:fuentes?|sources?|referencias?|references?|bibliograf[ií]a|bibliography)(?:\s*:|\s*$)',
+      caseSensitive: false,
+    ).hasMatch(line)) {
+      return true;
+    }
+    if (RegExp(
+      r'^[^:\n]{1,80}:\s*(?:<?(?:https?://|www\.)\S+>?|\[[^\]]+\]\((?:https?://|www\.)[^)]+\))[.!?]?\s*$',
+      caseSensitive: false,
+    ).hasMatch(line)) {
+      return true;
+    }
+    if (RegExp(
+      r'^\[[^\]]+\]:\s*(?:https?://|www\.)\S+',
+      caseSensitive: false,
+    ).hasMatch(line)) {
+      return true;
+    }
+    if (RegExp(r'^!?\[[^\]]*\]\([^)]+\)[.!?]?\s*$').hasMatch(line)) {
+      return true;
+    }
+    return RegExp(
+      r'^(?:<?(?:https?://|www\.)\S+>?)[.!?]?\s*$',
+      caseSensitive: false,
+    ).hasMatch(line);
+  }
+
+  String _cleanInline(String raw) {
+    var text = raw.trim();
+    if (text.isEmpty) return '';
+
+    final onlyUrl = RegExp(
+      r'^\s*(?:(?:https?://)|(?:www\.))\S+[.!?]?\s*$',
+      caseSensitive: false,
+    );
+    if (onlyUrl.hasMatch(text)) return '';
+
+    text = text.replaceAllMapped(
+      RegExp(r'!\[([^\]]*)\]\([^)]*\)'),
+      (match) => match.group(1) ?? '',
+    );
+    text = text.replaceAllMapped(
+      RegExp(r'\[([^\]]+)\]\([^)]*\)'),
+      (match) => match.group(1) ?? '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<(?:https?://|www\.)[^>]+>', caseSensitive: false),
+      _linkWord,
+    );
+    // Una URL colgada al final ("míralo aquí: https://…") se OMITE: decir
+    // "enlace" ahí no aporta nada al oyente (feedback físico 2026-07-24). En
+    // mitad de la frase sí se sustituye por la palabra, porque quitarla
+    // dejaría la frase coja.
+    text = text.replaceAll(
+      RegExp(
+        r'\s*:?\s*(?:https?://|www\.)[^\s<>()]*[^\s<>().,!?…](?=[.,!?…]*\s*$)',
+        caseSensitive: false,
+      ),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'(?:https?://|www\.)[^\s<>()]+', caseSensitive: false),
+      _linkWord,
+    );
+
+    text = text.replaceAllMapped(
+      RegExp(r'`([^`]+)`'),
+      (match) => _humanizeTechnical(match.group(1) ?? ''),
+    );
+    text = text.replaceAllMapped(
+      RegExp(r'(\*\*|__|~~|\*|_)(.+?)\1'),
+      (match) => match.group(2) ?? '',
+    );
+    text = text.replaceAll(RegExp(r'<[^>]+>'), ' ');
+
+    // Las cantidades se expanden antes que fechas y fracciones. Algunos motores
+    // TTS interpretan `0,99€` como `99 €` y omiten el cero; al entregar palabras
+    // explícitas preservamos tanto la parte entera como los céntimos.
+    text = _speakCurrencies(text);
+    text = _speakPercentages(text);
+    text = _speakDecimals(text);
+    text = text.replaceAllMapped(
+      RegExp(r'\b(\d{1,2})/(\d{1,2})/(\d{4})\b'),
+      _speakDate,
+    );
+    // Horas HH:MM (feedback físico 2026-07-24: el TTS leía los dos puntos de
+    // forma rara). Solo horas plausibles: 0-23 con minutos de DOS cifras 00-59
+    // — un marcador "2:1" o un código "45:99" quedan intactos.
+    text = text.replaceAllMapped(RegExp(r'\b([01]?\d|2[0-3]):([0-5]\d)\b'), (
+      match,
+    ) {
+      final hour = int.parse(match.group(1)!);
+      final minutes = match.group(2)!;
+      if (_isEnglish) {
+        return minutes == '00'
+            ? "$hour o'clock"
+            : '$hour ${int.parse(minutes)}';
+      }
+      return minutes == '00'
+          ? '$hour en punto'
+          : '$hour y ${int.parse(minutes)}';
+    });
+    text = text.replaceAllMapped(
+      RegExp(r'\b(\d{1,3})/(\d{1,3})\b'),
+      _speakFraction,
+    );
+    text = text.replaceAllMapped(RegExp(r'\b([\w.+-]+)@([\w.-]+)\b'), (match) {
+      final at = _isEnglish ? ' at ' : ' arroba ';
+      final dot = _isEnglish ? ' dot ' : ' punto ';
+      return '${match.group(1)}$at${match.group(2)!.replaceAll('.', dot)}';
+    });
+
+    text = _humanizeTechnical(text);
+    text = text
+        .replaceAll(RegExp(r'[─-◿⠀-⣿]'), ' ')
+        .replaceAll(RegExp(r'[`*_#>|]'), ' ')
+        // "y/o" es lo único donde la barra se dice "o". En rutas y endpoints
+        // (/api/audio/speak, src/lib/main.dart), que el asistente menciona a
+        // todas horas, decir "o" por cada barra suena a máquina rota: ahí la
+        // barra es un simple separador → espacio.
+        .replaceAllMapped(
+          RegExp(r'(?<=\b[yeo])\s*/\s*(?=[oaui]\b)', caseSensitive: false),
+          (_) => _isEnglish ? ' or ' : ' o ',
+        )
+        // Un slug o ruta relativa ("rusty4444/omniroute", "src/lib/main.dart")
+        // se dice por su ÚLTIMO tramo: al oído importa el nombre del repo o
+        // del archivo, no el dueño ni los directorios (feedback del owner:
+        // preguntó qué era "omniroute" y la voz le leía el repo entero).
+        .replaceAllMapped(
+          RegExp(r'(?<![\w/\\.-])[\w@~.-]+(?:/[\w@~.-]+)+(?![\w/\\])'),
+          (m) => m.group(0)!.split('/').where((s) => s.isNotEmpty).last,
+        )
+        .replaceAll(RegExp(r'[\\/]+'), ' ')
+        .replaceAll(RegExp(r'\s*[→⇒➜]+\s*'), ', ')
+        // Emojis y pictogramas: basura para un TTS (feedback físico
+        // 2026-07-24, y el modelo los añade a los saludos). Fuera.
+        .replaceAll(
+          RegExp(r'[☀-➿⬀-⯿️]|[\u{1F000}-\u{1FAFF}]', unicode: true),
+          ' ',
+        )
+        .replaceAll(RegExp(r'[ \t]+'), ' ')
+        // Colapsa el espacio que dejan los símbolos/emojis retirados justo
+        // antes de un signo de puntuación. OJO: replaceAllMapped, no
+        // replaceAll con '$1' — este último inserta el TEXTO "$1" literal y el
+        // motor lo pronunciaba ("dólar uno") cada vez que quitábamos un emoji.
+        .replaceAllMapped(RegExp(r'\s+([,.;:!?…])'), (m) => m.group(1)!)
+        .replaceAll(RegExp(r'(?:,\s*){2,}'), ', ')
+        .trim();
+    return text;
+  }
+
+  String _speakCurrencies(String input) {
+    var result = input.replaceAllMapped(
+      RegExp(
+        r'\b(USD|EUR|GBP)\s*(\d+(?:[.,]\d{1,2})?)\b',
+        caseSensitive: false,
+      ),
+      (match) =>
+          _speakCurrencyAmount(match.group(2) ?? '', match.group(1) ?? '') ??
+          (match.group(0) ?? ''),
+    );
+    result = result.replaceAllMapped(
+      RegExp(
+        r'\b(\d+(?:[.,]\d{1,2})?)\s*(USD|EUR|GBP)\b',
+        caseSensitive: false,
+      ),
+      (match) =>
+          _speakCurrencyAmount(match.group(1) ?? '', match.group(2) ?? '') ??
+          (match.group(0) ?? ''),
+    );
+    result = result.replaceAllMapped(
+      RegExp(r'([€$£])\s*(\d+(?:[.,]\d{1,2})?)'),
+      (match) =>
+          _speakCurrencyAmount(match.group(2) ?? '', match.group(1) ?? '') ??
+          (match.group(0) ?? ''),
+    );
+    result = result.replaceAllMapped(
+      RegExp(r'(\d+(?:[.,]\d{1,2})?)\s*([€$£])'),
+      (match) =>
+          _speakCurrencyAmount(match.group(1) ?? '', match.group(2) ?? '') ??
+          (match.group(0) ?? ''),
+    );
+    return result;
+  }
+
+  String? _speakCurrencyAmount(String raw, String currency) {
+    final decimalAt = raw.lastIndexOf(RegExp(r'[,.]'));
+    String majorRaw = raw;
+    String? minorRaw;
+    if (decimalAt >= 0 && raw.length - decimalAt - 1 <= 2) {
+      majorRaw = raw.substring(0, decimalAt);
+      minorRaw = raw.substring(decimalAt + 1);
+    }
+    final major = int.tryParse(majorRaw.replaceAll(RegExp(r'[,.]'), ''));
+    if (major == null || (minorRaw != null && minorRaw.isEmpty)) return null;
+    final minor = minorRaw == null
+        ? null
+        : int.tryParse(minorRaw.padRight(2, '0'));
+    if (minorRaw != null && minor == null) return null;
+
+    final normalizedCurrency = switch (currency.toUpperCase()) {
+      'USD' => r'$',
+      'EUR' => '€',
+      'GBP' => '£',
+      _ => currency,
+    };
+    final names = switch ((normalizedCurrency, _isEnglish)) {
+      ('€', false) => ('euro', 'euros', 'céntimo', 'céntimos'),
+      ('€', true) => ('euro', 'euros', 'cent', 'cents'),
+      (r'$', false) => ('dólar', 'dólares', 'centavo', 'centavos'),
+      (r'$', true) => ('dollar', 'dollars', 'cent', 'cents'),
+      ('£', false) => ('libra', 'libras', 'penique', 'peniques'),
+      ('£', true) => ('pound', 'pounds', 'penny', 'pence'),
+      _ => null,
+    };
+    if (names == null) return null;
+    final (unitOne, unitMany, subunitOne, subunitMany) = names;
+    final unit = major == 1 ? unitOne : unitMany;
+    final base = '$major $unit';
+    if (minor == null || minor == 0) return base;
+    final subunit = minor == 1 ? subunitOne : subunitMany;
+    final joiner = _isEnglish ? ' and ' : ' con ';
+    return '$base$joiner$minor $subunit';
+  }
+
+  String _speakPercentages(String input) {
+    final separator = _isEnglish ? 'point' : 'coma';
+    final unit = _isEnglish ? 'percent' : 'por ciento';
+    return input.replaceAllMapped(RegExp(r'\b(\d+)(?:[.,](\d+))?\s*%'), (
+      match,
+    ) {
+      final major = match.group(1) ?? '';
+      final minor = match.group(2);
+      final amount = minor == null ? major : '$major $separator $minor';
+      return '$amount $unit';
+    });
+  }
+
+  String _speakDecimals(String input) {
+    final decimal = _isEnglish
+        ? RegExp(r'\b(\d+)\.(\d+)\b')
+        : RegExp(r'\b(\d+),(\d+)\b');
+    final separator = _isEnglish ? 'point' : 'coma';
+    return input.replaceAllMapped(
+      decimal,
+      (match) => '${match.group(1)} $separator ${match.group(2)}',
+    );
+  }
+
+  String _humanizeTechnical(String raw) {
+    var text = raw;
+    text = text.replaceAllMapped(
+      RegExp(r'([a-záéíóúüñ0-9])([A-ZÁÉÍÓÚÜÑ])'),
+      (match) => '${match.group(1)} ${match.group(2)}',
+    );
+    text = text.replaceAllMapped(
+      RegExp(r'([A-ZÁÉÍÓÚÜÑ])([A-ZÁÉÍÓÚÜÑ][a-záéíóúüñ])'),
+      (match) => '${match.group(1)} ${match.group(2)}',
+    );
+    text = text.replaceAll(RegExp(r'[_]+'), ' ');
+    text = text.replaceAllMapped(
+      RegExp(r'([A-Za-zÁ-ÿ])\.([A-Za-zÁ-ÿ])'),
+      (match) => '${match.group(1)} ${match.group(2)}',
+    );
+    text = text.replaceAllMapped(
+      RegExp(r'([A-Za-zÁ-ÿ])[-]([A-Za-zÁ-ÿ])'),
+      (match) => '${match.group(1)} ${match.group(2)}',
+    );
+    return text;
+  }
+
+  String _speakDate(Match match) {
+    final first = int.tryParse(match.group(1) ?? '');
+    final second = int.tryParse(match.group(2) ?? '');
+    final year = int.tryParse(match.group(3) ?? '');
+    if (first == null || second == null || year == null) {
+      return match.group(0) ?? '';
+    }
+    final day = _isEnglish ? second : first;
+    final month = _isEnglish ? first : second;
+    if (day < 1 || day > 31 || month < 1 || month > 12) {
+      return match.group(0) ?? '';
+    }
+    const monthsEs = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    const monthsEn = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return _isEnglish
+        ? '${monthsEn[month - 1]} $day, $year'
+        : '$day de ${monthsEs[month - 1]} de $year';
+  }
+
+  String _speakFraction(Match match) {
+    final numerator = match.group(1) ?? '';
+    final denominator = match.group(2) ?? '';
+    if (numerator == '1' && denominator == '2') {
+      return _isEnglish ? 'one half' : 'un medio';
+    }
+    if (numerator == '3' && denominator == '4') {
+      return _isEnglish ? 'three quarters' : 'tres cuartos';
+    }
+    return _isEnglish
+        ? '$numerator over $denominator'
+        : '$numerator entre $denominator';
+  }
+
+  static String _withTerminalPunctuation(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty || RegExp(r'[.!?…]$').hasMatch(trimmed)) return trimmed;
+    return '$trimmed.';
+  }
+}

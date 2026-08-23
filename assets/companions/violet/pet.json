@@ -1,0 +1,41 @@
+{
+  "slug": "violet",
+  "name": "Violet",
+  "author": "Hermes Console team",
+  "license": "CC0-1.0",
+  "spritesheet": "spritesheet.webp",
+  "grid": {
+    "frameWidth": 192,
+    "frameHeight": 208,
+    "cols": 8,
+    "rows": 9
+  },
+  "fps": 8,
+  "states": {
+    "idle": {
+      "row": 0,
+      "frameCount": 8,
+      "loop": true
+    },
+    "run": {
+      "row": 1,
+      "frameCount": 8,
+      "loop": true
+    },
+    "waiting": {
+      "row": 2,
+      "frameCount": 8,
+      "loop": true
+    },
+    "wave": {
+      "row": 3,
+      "frameCount": 8,
+      "loop": false
+    },
+    "failed": {
+      "row": 4,
+      "frameCount": 8,
+      "loop": false
+    }
+  }
+}

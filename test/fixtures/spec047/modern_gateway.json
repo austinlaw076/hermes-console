@@ -1,0 +1,41 @@
+{
+  "fixture_version": 1,
+  "backend_identity": "synthetic-modern-v1",
+  "commands_catalog": {
+    "categories": [
+      {"id": "session", "label": "Session"},
+      {"id": "tools", "label": "Tools"}
+    ],
+    "commands": [
+      {
+        "name": "compress",
+        "description": "Summarize the current synthetic session",
+        "category": "session",
+        "scope": "session",
+        "risk": "medium"
+      },
+      {
+        "name": "usage",
+        "description": "Show synthetic usage",
+        "category": "session",
+        "scope": "session",
+        "risk": "read"
+      }
+    ]
+  },
+  "completion": {
+    "items": [
+      {"value": "/compress", "replace_from": 0},
+      {"value": "/usage", "replace_from": 0}
+    ]
+  },
+  "context_breakdown": {
+    "context_used": 32000,
+    "context_max": 128000,
+    "context_percent": 25.0,
+    "categories": [
+      {"id": "history", "label": "History", "tokens": 24000},
+      {"id": "tools", "label": "Tools", "tokens": 8000}
+    ]
+  }
+}

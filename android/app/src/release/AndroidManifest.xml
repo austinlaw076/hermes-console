@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!--
+      Android no soporta excepciones CIDR para LAN/Tailscale. Esta configuración
+      habilita el mecanismo de plataforma, pero TransportPrivacy.requireAllowed
+      bloquea en runtime HTTP/WS público en ApiClient, DashboardClient y
+      BridgeClient. Solo loopback/LAN/Tailscale pueden usar cleartext.
+      Ver src/release/res/xml/network_security_config.xml.
+    -->
+    <application
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:replace="android:networkSecurityConfig"/>
+</manifest>

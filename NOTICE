@@ -1,0 +1,18 @@
+Hermes Console
+Copyright (c) 2026 XPeta Lab
+
+The original Hermes Console source code is licensed under the GNU General
+Public License, version 3.0 only (SPDX short identifier `GPL-3.0-only`).
+
+This project contains portions derived from rusty4444/hermes-android, whose
+README declares the MIT License. The corresponding MIT notice is preserved in
+THIRD_PARTY_NOTICES.md.
+
+Third-party dependencies, fonts, models, artwork, trademarks, and other assets
+retain their own licenses. They are not relicensed under GPL-3.0-only. See
+THIRD_PARTY_NOTICES.md and the license texts distributed with those items.
+
+Hermes Console is an independent client. No affiliation, sponsorship, or
+endorsement by Nous Research, the Hermes Agent maintainers, or other referenced
+projects is implied. This license grants no trademark rights in names, logos,
+or branding.

@@ -1,0 +1,31 @@
+INCLUDE PERFETTO MODULE slices.with_context;
+
+WITH target_process AS (
+  SELECT upid
+  FROM process
+  WHERE pid = @TARGET_PID@
+    AND uid = @TARGET_UID@
+    AND android_appid = @TARGET_APP_ID@
+    AND (name GLOB '@PACKAGE@*' OR cmdline GLOB '@PACKAGE@*')
+), hermes_voice AS (
+  SELECT scoped.name
+  FROM thread_or_process_slice AS scoped
+  JOIN target_process USING (upid)
+  WHERE scoped.name = 'hermes.voice.turn'
+     OR scoped.name GLOB 'hermes.voice.*'
+), counts AS (
+  SELECT
+    SUM(CASE WHEN name = 'hermes.voice.turn' THEN 1 ELSE 0 END) AS turns,
+    SUM(CASE WHEN name GLOB 'hermes.voice.*'
+              AND name != 'hermes.voice.turn' THEN 1 ELSE 0 END) AS points,
+    SUM(CASE WHEN name = 'hermes.voice.turn_started' THEN 1 ELSE 0 END) AS starts,
+    COUNT(DISTINCT CASE WHEN name GLOB 'hermes.voice.*'
+                         AND name != 'hermes.voice.turn' THEN name END) AS distinct_points
+  FROM hermes_voice
+)
+SELECT
+  CAST(COALESCE(turns, 0) AS TEXT) || '|' ||
+  CAST(COALESCE(points, 0) AS TEXT) || '|' ||
+  CAST(COALESCE(starts, 0) AS TEXT) || '|' ||
+  CAST(COALESCE(distinct_points, 0) AS TEXT) AS hermes_voice_counts
+FROM counts;

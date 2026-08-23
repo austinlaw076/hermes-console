@@ -1,0 +1,213 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Bloqueo local opcional (local_auth): pide la verificación al sistema,
+         nunca accede a datos biométricos. Justificación: docs/SECURITY_POLICY.md -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Permisos EXCLUSIVOS de la instancia local en Termux (RUN_COMMAND para
+         lanzar el agente; REQUEST_IGNORE_BATTERY_OPTIMIZATIONS para que Doze no
+         lo mate) viven en src/full/AndroidManifest.xml: así el flavor `play`
+         (Google Play, solo-remoto) NO los declara. Ver docs/PLAY_PERMISSIONS.md. -->
+    <!-- Dictado y conversación iniciados por el usuario. La conversación puede
+         usar el único FGS microphone fuera de la app tras una elección separada.
+         Ningún audio arranca desde boot ni desde un receiver; una conversación
+         nunca se restaura tras process death. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Cámara: solo se abre por acción del usuario para escanear un QR de
+         emparejado o capturar una foto adjunta al chat. Nunca captura en
+         background. Justificación: docs/SECURITY_POLICY.md -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Cámara y micrófono son funciones opcionales (QR/adjuntos y dictado).
+         Declararlos como hardware no obligatorio evita que Google Play excluya
+         tablets/Chromebooks compatibles que carezcan de uno de ellos. -->
+    <uses-feature android:name="android.hardware.camera.any"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.microphone"
+        android:required="false" />
+    <!-- Notificaciones locales (Android 13+). Sin FCM/push: las dispara la
+         propia app para eventos del agente (aprobaciones, ejecuciones). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Escucha en 2º plano (opt-in): foreground service que mantiene vivo el
+         proceso para avisar con la app cerrada. Tipo dataSync (sincroniza el
+         estado del agente). Sin push de Google. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Lectura TTS iniciada por el usuario o por su ajuste de autolectura.
+         Permiso normal (sin diálogo runtime); evita que Android/GrapheneOS
+         silencie AudioTrack al bloquear o enviar la app a segundo plano. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Re-arranca la escucha en 2º plano tras reiniciar el móvil, solo si el
+         usuario la dejó activada (opt-in). Sin esto, los avisos del agente no
+         volverían tras un reinicio. Lo usa flutter_foreground_task (autoRunOnBoot). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Guardar en la galería las imágenes que el agente genera y el usuario
+         pide exportar. Android 13+ NO requiere permiso
+         para la media propia de la app; este WRITE se limita a Android <=9
+         (maxSdkVersion 28) para que "Guardar en galería" funcione también ahí.
+         Solo se usa al pulsar el botón del visor. Justificación: docs/SECURITY_POLICY.md -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <!-- Defensa frente a permisos legacy que alguna dependencia transitiva
+         pudiera aportar al manifest fusionado. Hermes no usa ninguno:
+         SAF/Photo Picker no requieren lectura global y Voz no consulta estado
+         telefónico. Retirarlos aquí evita que lleguen a QA o release. -->
+    <uses-permission
+        android:name="android.permission.READ_PHONE_STATE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        tools:node="remove" />
+    <application
+        android:label="Hermes Console"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:usesCleartextTraffic="false">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Deep link de emparejado: tocar un enlace hermes://pair (p.ej. el
+                 que devuelve el agente o desde Hermes Desktop) abre la app ya
+                 rellena. Esquema propio; no intercepta http/https. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="hermes" android:host="pair"/>
+            </intent-filter>
+            <!-- Share Sheet Android: el contenido se abre como borrador para
+                 revisarlo antes de enviarlo. Los content:// se copian al caché
+                 privado; no requiere permisos de almacenamiento. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="image/*"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="image/*"/>
+            </intent-filter>
+        </activity>
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+        <!-- Iconos monocromos del foreground service. El plugin usa el icono
+             completo del launcher si no se le proporciona uno y Android lo
+             muestra como un retrato recargado en la tarjeta. Estas referencias
+             permiten proyectar un glifo limpio para el trabajo en segundo plano
+             y un orbe específico para la conversación de voz. -->
+        <meta-data
+            android:name="dev.xpetalab.hermesconsole.service.NOTIFICATION_ICON"
+            android:resource="@drawable/ic_stat_hermes" />
+        <meta-data
+            android:name="dev.xpetalab.hermesconsole.voice.NOTIFICATION_ICON_ACTIVE"
+            android:resource="@drawable/ic_stat_voice_orb_active" />
+        <meta-data
+            android:name="dev.xpetalab.hermesconsole.voice.NOTIFICATION_ICON_PAUSED"
+            android:resource="@drawable/ic_stat_voice_orb_paused" />
+        <!-- Único foreground service de la app. dataSync vigila ejecuciones;
+             microphone continúa una conversación iniciada desde una Activity
+             visible; mediaPlayback protege TTS solicitado. Ningún tipo de audio
+             arranca desde boot o un receiver y una conversación no se restaura
+             tras process death. -->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="dataSync|microphone|mediaPlayback"
+            android:exported="false" />
+
+        <!-- Recibe los toques de los botones de acción de las notificaciones
+             (Aprobar/Rechazar) cuando la app está muerta y los entrega al
+             isolate de fondo (onDidReceiveBackgroundNotificationResponse).
+             Requerido por flutter_local_notifications para acciones con
+             showsUserInterface:false. Sin permisos nuevos, no exportado. -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".NewSessionWidgetProvider"
+            android:label="@string/hermes_widget_dashboard_name"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/new_session_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".HermesCompactWidgetProvider"
+            android:label="@string/hermes_widget_compact_name"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hermes_widget_compact_info" />
+        </receiver>
+        <receiver
+            android:name=".HermesControlWidgetProvider"
+            android:label="@string/hermes_widget_control_name"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hermes_widget_control_info" />
+        </receiver>
+    </application>
+    <queries>
+        <!-- Reconocedor de voz del sistema (STT). Android 11+ (API 30+) filtra la
+             visibilidad de paquetes: sin esta query, speech_to_text NO puede ver el
+             SpeechRecognizer, initialize() devuelve false y el dictado aparece como
+             "no disponible" aunque el micro y los servicios de voz existan. Es el
+             requisito documentado del plugin para el motor del sistema. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <!-- Síntesis de voz del sistema (TTS). No concede acceso global a las
+             apps instaladas: permite resolver únicamente servicios que ofrecen
+             la acción estándar. Sin esta query Android 11+ bloquea incluso el
+             motor privado de GrapheneOS y TextToSpeech termina con status -1. -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+        <intent>
+            <data android:scheme="http" />
+        </intent>
+        <!-- Las queries de Termux/F-Droid/market (exclusivas de la instancia
+             local) viven en src/full/AndroidManifest.xml → ausentes en `play`. -->
+    </queries>
+</manifest>

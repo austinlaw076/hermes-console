@@ -1,0 +1,44 @@
+{
+  "fixture_version": 1,
+  "session_id": "runtime-synthetic-047",
+  "lineage_root_id": "lineage-synthetic-047",
+  "slash_exec": {
+    "request": {
+      "session_id": "runtime-synthetic-047",
+      "command": "compress release decisions"
+    },
+    "response": {"output": "Synthetic compression accepted"}
+  },
+  "dispatch_fallback": {
+    "request": {
+      "session_id": "runtime-synthetic-047",
+      "name": "compress",
+      "arg": "release decisions"
+    },
+    "response": {
+      "status": "accepted",
+      "output": "Synthetic fallback accepted"
+    }
+  },
+  "events": [
+    {
+      "event": "status.update",
+      "payload": {
+        "session_id": "runtime-synthetic-047",
+        "kind": "compacting"
+      }
+    },
+    {
+      "event": "session.info",
+      "payload": {
+        "session_id": "runtime-synthetic-047-next",
+        "stored_session_id": "stored-synthetic-047-next",
+        "_lineage_root_id": "lineage-synthetic-047"
+      }
+    },
+    {
+      "event": "message.complete",
+      "payload": {"session_id": "runtime-synthetic-047-next"}
+    }
+  ]
+}

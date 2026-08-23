@@ -1,0 +1,142 @@
+name: hermes_android
+description: "Hermes Agent — chat with your Hermes Gateway API Server over LAN. SSE streaming, Bearer auth, session management."
+publish_to: 'none'
+version: 1.2.7+914
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Internacionalización (i18n): delegates de Material/Cupertino + intl.
+  # Strings traducibles en lib/l10n/*.arb (generación con gen-l10n).
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+
+  # UI
+  cupertino_icons: ^1.0.8
+  flutter_markdown: ^0.7.6
+  markdown: ^7.3.0
+
+  # Animación / fluidez estilo Telegram-ChatGPT (spec 041). Dart puro: sin
+  # permisos, telemetría ni destinos de red — no tocan la política de privacidad.
+  flutter_animate: ^4.5.0
+  flutter_staggered_animations: ^1.1.1
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # Network
+  http: ^1.2.0
+  web_socket_channel: ^3.0.0
+
+  # Local storage
+  shared_preferences: ^2.3.0
+  # Puente de estado no sensible entre Flutter y el widget Android Glance.
+  # No mantiene workers ni conexiones; la app solicita updates explícitos.
+  home_widget: ^0.9.3
+  path_provider: ^2.1.5
+
+  # Data models
+  json_annotation: ^4.9.0
+  uuid: ^4.5.1
+
+  # Misc
+  url_launcher: ^6.3.0
+  package_info_plus: ^8.0.0
+  app_links: ^6.3.0 # deep link hermes://pair (abrir la app ya rellena)
+  share_plus: ^10.1.4 # compartir imágenes generadas (spec 030)
+  gal: ^2.3.1 # guardar imágenes generadas en la galería (spec 030)
+
+  # Markdown syntax highlighting
+  highlight: ^0.7.0
+  flutter_secure_storage: ^10.3.1
+  image_picker: ^1.2.2
+  # Configura explícitamente el Photo Picker múltiple nativo en Android 13+.
+  # Ya era dependencia transitiva de image_picker; declararla permite usar su
+  # API pública sin depender accidentalmente de una dependencia indirecta.
+  image_picker_android: ^0.8.13+19
+  image_picker_platform_interface: ^2.11.1
+  file_picker: ^10.0.0
+
+  # App lock (biometric/PIN)
+  local_auth: ^2.3.0
+  crypto: ^3.0.6
+
+  # Voz: dictado (STT del sistema), lectura (TTS on-device) y audio (ElevenLabs)
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.0
+  audioplayers: ^6.1.0
+  # Whisper on-device (STT privado): grabación + whisper.cpp
+  record: ^6.0.0
+  whisper_ggml_plus: ^1.0.0
+  # Voz neuronal on-device (TTS privado): sherpa-onnx + modelos Piper/VITS de HF
+  sherpa_onnx: ^1.13.2
+  # Emparejado por QR: ZXing open source (sin ML Kit ni servicios de Google).
+  qr_code_scanner_plus: ^2.2.0
+  # Descompresión del modelo Piper (.tar.bz2): bzip2 + tar
+  archive: ^4.0.0
+
+  # Notificaciones locales (sin Google/FCM): eventos del agente
+  flutter_local_notifications: ^18.0.1
+  flutter_foreground_task: ^9.2.2
+
+  # SSH: cliente puro Dart (terminal PTY + SFTP) y emulador de terminal
+  dartssh2: ^2.9.0
+  xterm: ^4.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.14
+  json_serializable: ^6.9.4
+
+flutter:
+  uses-material-design: true
+  # Genera la clase Strings (AppLocalizations) desde lib/l10n/*.arb (ver
+  # l10n.yaml). Migración de textos a i18n incremental, por pantalla.
+  generate: true
+  assets:
+    # Copia canónica de GPLv3 accesible desde Acerca de → Licencias.
+    - LICENSE
+    - assets/
+    - assets/fonts/OFL.txt
+    - assets/bridge/hermes_bridge.py
+    # Branding "Spark" (chispa de marca). El widget de mascota es CustomPaint
+    # (sin asset); estos son el logo/símbolo estático para splash/about/header.
+    - assets/branding/spark_mark.png
+    - assets/branding/spark_mark.webp
+    - assets/branding/hermes_logo.webp
+    - assets/branding/hermes_logo_light.png
+    # Mascotas "Companion" (Fase A): galería LOCAL de mascotas cosméticas en
+    # formato compatible Petdex (pet.json + spritesheet.webp). Son assets locales
+    # con licencia propia; nunca se descargan en runtime (la red es Fase C).
+    # NOTA: las declaraciones de directorio en Flutter NO son recursivas, así que
+    # cada carpeta de mascota debe listarse explícitamente.
+    # Formato y procedencia: docs/PETDEX_CONTRACT.md.
+    # U-04 (spec 028): solo Spark (built-in, sin assets) va de serie; nimbus/
+    # pixel/violet salen del bundle — siguen en el repo para publicarlas en el
+    # Petdex remoto cuando toque. El repositorio descubre pets del AssetManifest,
+    # así que basta con no empaquetarlas.
+    - assets/companions/
+  # Fuentes empaquetadas localmente bajo SIL OFL 1.1 para el selector de fuente
+  # en Ajustes → apariencia. Son archivos locales: nunca se descargan en
+  # runtime (no usamos google_fonts; ver docs/PRIVACY_POLICY.md).
+  # Las cuatro familias son variables y cubren los pesos usados por los temas.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat.ttf
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito.ttf
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono.ttf

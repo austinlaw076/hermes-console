@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RELEASE network security config.
+
+  La app solo se conecta al gateway Hermes self-hosted que el PROPIO usuario
+  configura (LAN, Tailscale o dominio); nunca carga contenido web de terceros.
+  El caso de uso principal incluye gateways por HTTP en IP de Tailscale
+  (100.64.0.0/10) o de LAN privada. El network_security_config de Android NO
+  soporta rangos CIDR (solo dominios/IPs exactos), así que no se puede acotar el
+  cleartext por rango. Por eso la plataforma lo permite a nivel base, mientras
+  `TransportPrivacy.requireAllowed` lo bloquea en TODOS los clientes de red
+  cuando el destino no es loopback/LAN/Tailscale. El permiso Android no es la
+  decisión de seguridad final.
+
+  Google Play PERMITE cleartext (solo genera un aviso informativo en el
+  Pre-Launch Report, no un rechazo). La app exige HTTPS/WSS para hosts públicos;
+  el aviso de UX ya no es la única mitigación.
+
+  Las conexiones https:// validan el certificado del sistema con normalidad.
+  Debug usa su propia config (src/debug/res/xml). Ver docs/RELEASE_DISTRIBUTION.md.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
