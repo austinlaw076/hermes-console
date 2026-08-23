@@ -505,7 +505,11 @@ void main() {
       );
       final callsBefore = h.gateway.infoCalls;
       h.gateway.emitPetChanged();
-      await pumpEventQueue();
+      await _waitForController(
+        h.controller,
+        () => h.controller.activeCompanion?.slug == 'jinx',
+        reason: 'pet.changed no actualizó la mascota activa desde pet.info',
+      );
 
       expect(h.gateway.infoCalls, greaterThan(callsBefore));
       expect(h.controller.activeCompanion?.slug, 'jinx');
