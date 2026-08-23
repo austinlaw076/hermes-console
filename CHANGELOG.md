@@ -3,7 +3,7 @@
 All notable public changes are documented here. Internal QA/profile artifacts
 are not releases.
 
-## Unreleased — 1.2.7 (914)
+## 1.2.7 (914)
 
 - Added the Bots workspace with profiles, rooms, mentions and task-focused
   collaboration adapted from Hermes Desktop contracts.
