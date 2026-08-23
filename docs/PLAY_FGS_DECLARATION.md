@@ -3,7 +3,7 @@
 **Tipos declarados**: `dataSync`, `microphone` y `mediaPlayback` sobre el único
 servicio no exportado de `flutter_foreground_task`.
 
-**Revisado**: 2026-08-23 para el candidato fuente `1.2.7 (914)`. Los tipos
+**Revisado**: 2026-08-23 para el candidato fuente `1.2.7 (915)`. Los tipos
 coinciden con el manifest versionado, pero el AAB firmado, su manifest fusionado
 y la demostración física todavía están pendientes. Copiar o adaptar en Play
 Console → Contenido de la aplicación → Permisos de servicios en primer plano

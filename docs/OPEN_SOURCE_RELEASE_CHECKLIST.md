@@ -1,6 +1,6 @@
 # Open-source release checklist
 
-Candidate version: `1.2.7+914`, maintained in an isolated fresh-history export.
+Candidate version: `1.2.7+915`, maintained in an isolated fresh-history export.
 Record the final public SHA after all audit commits are complete. This checklist
 is an engineering gate, not legal advice. Do not create a public remote or
 distribute a GPL-labelled APK/AAB until every blocking item is closed on the
@@ -40,7 +40,7 @@ exact candidate commit.
 ## Product and release parity
 
 - [x] Keep chat behavior frozen except for the approved structured-image path.
-- [x] Document `1.2.7+914` against the previous Play baseline `1.2.6+913`.
+- [x] Document `1.2.7+915` against the previous Play baseline `1.2.6+913`.
 - [ ] Build `fullRelease` from a clean clone for GitHub/Obtainium and build
   `playRelease` separately through the private Play process, using the final
   signing configuration held outside Git.

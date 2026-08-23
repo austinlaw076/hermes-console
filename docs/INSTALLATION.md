@@ -2,7 +2,7 @@
 
 ## Current status
 
-`1.2.7+914` is the source-current publication candidate. Its QA profile build
+`1.2.7+915` is the source-current publication candidate. Its QA profile build
 is for internal validation only and still requires the final physical Voice
 gate before a production AAB or APK is created. `1.2.6 (913)` is the latest
 version already delivered through Google Play.
