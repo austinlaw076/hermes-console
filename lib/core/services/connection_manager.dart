@@ -2531,8 +2531,7 @@ class DashboardClient {
     String scope = 'main',
     String task = '',
     String baseUrl = '',
-    String name = '',
-    List<String> models = const [],
+    String apiKey = '',
     String? profile,
   }) async {
     final res = await apiPost(
@@ -2543,12 +2542,24 @@ class DashboardClient {
         'scope': scope,
         if (task.isNotEmpty) 'task': task,
         if (baseUrl.isNotEmpty) 'base_url': baseUrl,
-        if (name.isNotEmpty) 'name': name,
-        if (models.isNotEmpty) 'models': models,
+        if (apiKey.isNotEmpty) 'api_key': apiKey,
       },
     );
     return (res['ok'] as bool?) ?? false;
   }
+
+  /// Prueba un endpoint OpenAI-compatible desde el servidor Hermes.
+  ///
+  /// Hacer esta sonda en el Dashboard, como Hermes Desktop, es importante:
+  /// el endpoint puede estar ligado a loopback o a una red accesible desde el
+  /// servidor pero no directamente desde el teléfono.
+  Future<Map<String, dynamic>> validateExternalProvider({
+    required String baseUrl,
+    String apiKey = '',
+  }) => apiPost(
+    'providers/validate',
+    body: {'key': 'OPENAI_BASE_URL', 'value': baseUrl, 'api_key': apiKey},
+  );
 
   /// Intenta eliminar un custom_provider del servidor vía DELETE /api/model/provider.
   /// Lanza Exception si la API no lo soporta (404/405) para que el llamante

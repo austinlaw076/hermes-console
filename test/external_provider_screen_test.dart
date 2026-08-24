@@ -6,12 +6,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/screens/external_provider_screen.dart';
+import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   final en = lookupStrings(const Locale('en'));
   group('normalizeExternalProviderUrl', () {
-    test('no añade ni cambia URL simple', () {
+    test('conserva una raíz para poder probar compatibilidad', () {
       expect(
         normalizeExternalProviderUrl('http://192.168.1.5:11434'),
         'http://192.168.1.5:11434',
@@ -32,17 +33,17 @@ void main() {
       );
     });
 
-    test('quita sufijo /v1 que el usuario añadió por error', () {
+    test('conserva el sufijo /v1 de la URL canónica', () {
       expect(
         normalizeExternalProviderUrl('http://host:11434/v1'),
-        'http://host:11434',
+        'http://host:11434/v1',
       );
     });
 
-    test('quita /v1/ con barra final', () {
+    test('conserva /v1 y quita solo la barra final', () {
       expect(
         normalizeExternalProviderUrl('http://host:11434/v1/'),
-        'http://host:11434',
+        'http://host:11434/v1',
       );
     });
 
@@ -62,6 +63,52 @@ void main() {
 
     test('URL vacía devuelve vacío', () {
       expect(normalizeExternalProviderUrl(''), '');
+    });
+  });
+
+  group('externalProviderBaseUrlCandidates', () {
+    test('prueba la raíz y luego su endpoint OpenAI compatible', () {
+      expect(externalProviderBaseUrlCandidates('http://host:11434'), [
+        'http://host:11434',
+        'http://host:11434/v1',
+      ]);
+    });
+
+    test('no duplica /v1 cuando ya forma parte de la URL', () {
+      expect(externalProviderBaseUrlCandidates('http://host:8000/v1'), [
+        'http://host:8000/v1',
+      ]);
+    });
+  });
+
+  group('probeExternalProviderCandidates', () {
+    test('continúa con /v1 si la raíz no expone /models', () async {
+      final requested = <String>[];
+
+      final result = await probeExternalProviderCandidates(
+        'https://edge.example',
+        (baseUrl) async {
+          requested.add(baseUrl);
+          if (baseUrl == 'https://edge.example') {
+            throw Exception('HTTP 404');
+          }
+          return ['edge-model'];
+        },
+      );
+
+      expect(requested, ['https://edge.example', 'https://edge.example/v1']);
+      expect(result.baseUrl, 'https://edge.example/v1');
+      expect(result.models, ['edge-model']);
+    });
+
+    test('conserva la URL exacta que respondió', () async {
+      final result = await probeExternalProviderCandidates(
+        'https://edge.example/v1',
+        (_) async => ['edge-model'],
+      );
+
+      expect(result.baseUrl, 'https://edge.example/v1');
+      expect(result.models, ['edge-model']);
     });
   });
 
@@ -123,6 +170,34 @@ void main() {
     test('HTTP 500 menciona error del servidor', () {
       final msg = humanizeProviderTestError(en, 'Exception: HTTP 500');
       expect(msg, contains('5xx'));
+    });
+  });
+
+  group('humanizeExternalProviderError', () {
+    test('muestra el detail real de un 400 del Dashboard', () {
+      const error = DashboardHttpException(
+        400,
+        body: '{"detail":"provider and model required for main"}',
+      );
+
+      expect(
+        humanizeExternalProviderError(error),
+        'provider and model required for main',
+      );
+    });
+
+    test('redacta claves incluidas por un servidor remoto', () {
+      const error = DashboardHttpException(
+        422,
+        body:
+            '{"detail":"api_key=sk-super-secret-value rejected; '
+            'Authorization: Bearer abcdefghijklmnop"}',
+      );
+
+      final message = humanizeExternalProviderError(error);
+      expect(message, isNot(contains('sk-super-secret-value')));
+      expect(message, isNot(contains('abcdefghijklmnop')));
+      expect(message, contains('[redacted]'));
     });
   });
 

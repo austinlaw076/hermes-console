@@ -22,6 +22,7 @@ import '../../main.dart';
 import '../services/bridge_manager.dart';
 import '../services/connection_manager.dart';
 import '../theme/app_theme.dart';
+import '../utils/api_error.dart';
 import '../utils/transport_privacy.dart';
 import '../widgets/hermes_app_bar.dart';
 import '../widgets/hermes_ui.dart';
@@ -30,10 +31,10 @@ import '../widgets/hermes_ui.dart';
 
 /// Tipos de proveedor externo que la app puede configurar.
 enum ExternalProviderType {
-  ollama('Ollama', 'custom', 'http://192.168.x.x:11434'),
-  lmStudio('LM Studio', 'custom', 'http://192.168.x.x:1234'),
-  openAiCompat('OpenAI-compat.', 'custom', 'https://api.provider.example'),
-  custom('Custom', 'custom', 'http://host:port');
+  ollama('Ollama', 'custom', 'http://192.168.x.x:11434/v1'),
+  lmStudio('LM Studio', 'custom', 'http://192.168.x.x:1234/v1'),
+  openAiCompat('OpenAI-compat.', 'custom', 'https://api.provider.example/v1'),
+  custom('Custom', 'custom', 'http://host:port/v1');
 
   const ExternalProviderType(this.label, this.hermesProvider, this.urlHint);
 
@@ -52,12 +53,43 @@ enum ExternalProviderType {
 
 /// Normaliza la base_url que el usuario introduce:
 /// - Quita espacios y barras finales.
-/// - Quita el sufijo `/v1` si ya lo tiene (el bridge lo añade en runtime).
-/// - Deja el resto intacto.
+/// - Conserva la ruta OpenAI-compatible completa, incluido `/v1`.
+///
+/// Hermes Desktop persiste exactamente la URL que se probó. Quitar `/v1`
+/// aquí hacía que la prueba móvil y el runtime llamasen a rutas distintas.
 String normalizeExternalProviderUrl(String raw) {
-  var u = raw.trim().replaceAll(RegExp(r'/+$'), '');
-  if (u.endsWith('/v1')) u = u.substring(0, u.length - 3);
+  final u = raw.trim().replaceAll(RegExp(r'/+$'), '');
   return u.isEmpty ? u : TransportPrivacy.requireAllowed(u);
+}
+
+/// Variantes que se prueban, en orden, sin guardar una URL distinta de la que
+/// realmente anunció modelos. Una raíz (`:11434`) conserva compatibilidad con
+/// entradas antiguas y después intenta el contrato OpenAI (`:11434/v1`).
+List<String> externalProviderBaseUrlCandidates(String raw) {
+  final exact = normalizeExternalProviderUrl(raw);
+  if (exact.isEmpty || exact.endsWith('/v1')) return [exact];
+  return [exact, '$exact/v1'];
+}
+
+typedef ExternalProviderProbe = ({String baseUrl, List<String> models});
+
+/// Recorre las variantes compatibles y conserva la URL exacta que respondió.
+/// Los fallos de una raíz sin `/v1` no impiden probar su variante OpenAI.
+Future<ExternalProviderProbe> probeExternalProviderCandidates(
+  String inputBase,
+  Future<List<String>> Function(String baseUrl) fetchModels,
+) async {
+  Object? lastError;
+  for (final candidate in externalProviderBaseUrlCandidates(inputBase)) {
+    try {
+      final models = await fetchModels(candidate);
+      if (models.isNotEmpty) return (baseUrl: candidate, models: models);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  if (lastError != null) throw lastError;
+  return (baseUrl: inputBase, models: const <String>[]);
 }
 
 /// Convierte errores de socket/HTTP en mensajes legibles para el usuario.
@@ -86,6 +118,27 @@ String humanizeProviderTestError(Strings s, String e) {
     return s.extErrServer;
   }
   return e.length > 220 ? '${e.substring(0, 220)}…' : e;
+}
+
+/// Extrae el detalle útil de un 400/422 del Dashboard sin exponer una clave
+/// que un servidor remoto pudiera haber incluido en su mensaje de error.
+String humanizeExternalProviderError(Object error) {
+  var safe = error is DashboardHttpException
+      ? humanizeApiError(Exception('HTTP ${error.statusCode}: ${error.body}'))
+      : humanizeApiError(error);
+  safe = safe.replaceAll(
+    RegExp(r'\bBearer\s+[A-Za-z0-9._~+/=-]{6,}', caseSensitive: false),
+    'Bearer [redacted]',
+  );
+  safe = safe.replaceAllMapped(
+    RegExp(
+      r'\b(api[_ -]?key|token|password)\s*[:=]\s*[^\s,;]+',
+      caseSensitive: false,
+    ),
+    (match) => '${match.group(1)}=[redacted]',
+  );
+  safe = safe.replaceAll(RegExp(r'\bsk-[A-Za-z0-9_-]{6,}\b'), '[redacted]');
+  return safe.length > 220 ? '${safe.substring(0, 220)}…' : safe;
 }
 
 // ── Screen ───────────────────────────────────────────────────────────────────
@@ -128,6 +181,8 @@ class _ExternalProviderScreenState extends State<ExternalProviderScreen> {
   // Modelo activo local (tras el primer "Usar" exitoso, no cerramos la pantalla
   // para que el usuario pueda cambiar entre todos los modelos descubiertos).
   String? _activeModel;
+  String? _testedInputBaseUrl;
+  String? _resolvedBaseUrl;
 
   BridgeManager? _bridgeMgr;
 
@@ -179,28 +234,80 @@ class _ExternalProviderScreenState extends State<ExternalProviderScreen> {
       _models = [];
     });
     try {
-      final base = normalizeExternalProviderUrl(rawUrl);
-      final models = await _fetchModels(base, headers);
+      final inputBase = normalizeExternalProviderUrl(rawUrl);
+      final probe = _isLocal
+          ? await _probeDirect(inputBase, headers)
+          : await _probeFromHermes(inputBase, apiKey, headers);
       setState(() {
-        _models = models;
-        _testError = models.isEmpty ? s.extNoModels : null;
+        _models = probe.models;
+        _testedInputBaseUrl = inputBase;
+        _resolvedBaseUrl = probe.baseUrl;
+        _testError = probe.models.isEmpty ? s.extNoModels : null;
         _testing = false;
       });
     } catch (e) {
       setState(() {
-        _testError = humanizeProviderTestError(s, e.toString());
+        _testError = humanizeProviderTestError(
+          s,
+          humanizeExternalProviderError(e),
+        );
         _testing = false;
       });
     }
   }
 
-  /// Intenta OpenAI-compatible /v1/models; si Ollama y falla, prueba /api/tags.
+  Future<ExternalProviderProbe> _probeFromHermes(
+    String inputBase,
+    String apiKey,
+    Map<String, String> directHeaders,
+  ) async {
+    final dash = DashboardClient.lazy(widget.connection);
+    try {
+      for (final candidate in externalProviderBaseUrlCandidates(inputBase)) {
+        try {
+          final result = await dash.validateExternalProvider(
+            baseUrl: candidate,
+            apiKey: apiKey,
+          );
+          final models = (result['models'] as List? ?? const [])
+              .map((value) => value.toString().trim())
+              .where((value) => value.isNotEmpty)
+              .toList();
+          if (models.isNotEmpty) {
+            return (baseUrl: candidate, models: models);
+          }
+          final reachable = result['reachable'] != false;
+          final message = (result['message'] ?? '').toString().trim();
+          if (!reachable && message.isNotEmpty) throw Exception(message);
+        } on DashboardHttpException catch (error) {
+          // Hermes antiguos no tienen /api/providers/validate. Conservamos el
+          // flujo anterior como compatibilidad, sin ocultar otros 4xx.
+          if (error.statusCode != 404 && error.statusCode != 405) rethrow;
+          return _probeDirect(inputBase, directHeaders);
+        }
+      }
+      return (baseUrl: inputBase, models: const <String>[]);
+    } finally {
+      dash.close();
+    }
+  }
+
+  Future<ExternalProviderProbe> _probeDirect(
+    String inputBase,
+    Map<String, String> headers,
+  ) => probeExternalProviderCandidates(
+    inputBase,
+    (candidate) => _fetchModels(candidate, headers),
+  );
+
+  /// Intenta `{base_url}/models`; si Ollama y falla, prueba `/api/tags` en la
+  /// raíz. [base] es también la URL exacta que se persistirá si responde.
   Future<List<String>> _fetchModels(
     String base,
     Map<String, String> headers,
   ) async {
     final res = await http
-        .get(Uri.parse('$base/v1/models'), headers: headers)
+        .get(Uri.parse('$base/models'), headers: headers)
         .timeout(const Duration(seconds: 8));
     if (res.statusCode == 200) {
       final models = _parseOpenAiModels(res.body);
@@ -208,8 +315,11 @@ class _ExternalProviderScreenState extends State<ExternalProviderScreen> {
     }
     // Fallback Ollama: /api/tags (modelo descargados).
     if (_type == ExternalProviderType.ollama) {
+      final root = base.endsWith('/v1')
+          ? base.substring(0, base.length - 3)
+          : base;
       final r = await http
-          .get(Uri.parse('$base/api/tags'), headers: headers)
+          .get(Uri.parse('$root/api/tags'), headers: headers)
           .timeout(const Duration(seconds: 8));
       if (r.statusCode == 200) return _parseOllamaTags(r.body);
     }
@@ -261,10 +371,13 @@ class _ExternalProviderScreenState extends State<ExternalProviderScreen> {
 
   Future<void> _useModel(String modelId) async {
     final s = Strings.of(context);
-    final name = _nameCtrl.text.trim();
     setState(() => _setting = true);
     try {
-      final base = normalizeExternalProviderUrl(_urlCtrl.text.trim());
+      final inputBase = normalizeExternalProviderUrl(_urlCtrl.text.trim());
+      final base = _testedInputBaseUrl == inputBase
+          ? (_resolvedBaseUrl ?? inputBase)
+          : inputBase;
+      final apiKey = _keyCtrl.text.trim();
       if (_isLocal) {
         final client = await _bridgeMgr?.clientFor(widget.connection.id);
         if (client == null) {
@@ -292,7 +405,7 @@ class _ExternalProviderScreenState extends State<ExternalProviderScreen> {
             providerSlug: _type.hermesProvider,
             modelId: modelId,
             baseUrl: base,
-            name: name,
+            apiKey: apiKey,
           );
           if (!ok) throw Exception(s.extApplyRejected);
         } finally {
@@ -310,7 +423,7 @@ class _ExternalProviderScreenState extends State<ExternalProviderScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString();
+      final msg = humanizeExternalProviderError(e);
       final isVenvBroken =
           msg.contains('hermes_cli') ||
           msg.contains('ModuleNotFoundError') ||

@@ -780,6 +780,64 @@ void main() {
       });
     });
 
+    test('replica el contrato Desktop para proveedor externo', () async {
+      final calls = <http.Request>[];
+      final client = DashboardClient(
+        host: 'hermes.local',
+        manualToken: 'test-token',
+        httpClientOverride: MockClient((request) async {
+          calls.add(request);
+          if (request.url.path == '/api/providers/validate') {
+            return http.Response(
+              jsonEncode({
+                'ok': true,
+                'reachable': true,
+                'message': '',
+                'models': ['edge-model'],
+              }),
+              200,
+            );
+          }
+          if (request.url.path == '/api/model/set') {
+            return http.Response(jsonEncode({'ok': true}), 200);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(client.close);
+
+      final probe = await client.validateExternalProvider(
+        baseUrl: 'https://edge.example/v1',
+        apiKey: 'provider-secret',
+      );
+      final applied = await client.setActiveModel(
+        providerSlug: 'custom',
+        modelId: 'edge-model',
+        baseUrl: 'https://edge.example/v1',
+        apiKey: 'provider-secret',
+      );
+
+      expect(probe['models'], ['edge-model']);
+      expect(applied, isTrue);
+      expect(calls, hasLength(2));
+      expect(calls.first.url.path, '/api/providers/validate');
+      expect(jsonDecode(calls.first.body), {
+        'key': 'OPENAI_BASE_URL',
+        'value': 'https://edge.example/v1',
+        'api_key': 'provider-secret',
+      });
+      expect(calls.last.url.path, '/api/model/set');
+      expect(jsonDecode(calls.last.body), {
+        'provider': 'custom',
+        'model': 'edge-model',
+        'scope': 'main',
+        'base_url': 'https://edge.example/v1',
+        'api_key': 'provider-secret',
+      });
+      expect(calls.last.body, isNot(contains('"name"')));
+      expect(calls.last.body, isNot(contains('"models"')));
+    });
+
     test('usa los endpoints oficiales del TTS de Hermes', () async {
       final calls = <http.Request>[];
       final client = DashboardClient(
