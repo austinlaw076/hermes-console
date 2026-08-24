@@ -552,6 +552,40 @@ void main() {
       expect(c, contains(r'venv\Scripts\hermes.exe'));
     });
 
+    test('permite una instalación oficial limpia sin cortarla a los 180s', () {
+      expect(c, contains(r'$script:HermesInstallTimeoutSeconds = 900'));
+      expect(c, contains(r'$script:HermesInstallTimeoutSeconds `'));
+      expect(c, contains('can take several minutes on a clean Windows host'));
+      expect(
+        c,
+        isNot(
+          contains(
+            'Invoke-HiddenProcess (Get-PowerShellExecutable) '
+            r'$arguments 180',
+          ),
+        ),
+      );
+    });
+
+    test('reutiliza el dist real y tolera el primer build del Dashboard', () {
+      expect(c, contains(r'hermes-agent\hermes_cli\web_dist\index.html'));
+      expect(c, isNot(contains(r'hermes-agent\web\dist\index.html')));
+      expect(
+        c,
+        contains(
+          'Wait-HermesService "dashboard" '
+          '"http://127.0.0.1:9119" \$ApiKey 240',
+        ),
+      );
+      expect(c, contains('command = command & " --skip-build"'));
+      expect(c, contains('Test-HermesTaskRunning'));
+      expect(
+        c,
+        contains('Existing Dashboard startup/build is still running; waiting'),
+      );
+      expect(c, isNot(contains(r'$dashboardMustRestart')));
+    });
+
     test('verifica manifest, tamano, SHA-256, version y compilacion', () {
       expect(c, contains('bridge-release.json'));
       expect(c, contains('Get-FileHash'));

@@ -36,6 +36,7 @@ $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $script:TaskDefinitionsChanged = @{}
 $script:RunnerChanged = @{}
 $script:BridgeChanged = $false
+$script:HermesInstallTimeoutSeconds = 900
 
 New-Item -ItemType Directory -Force -Path $HermesHome, $ServicesDir, $LogsDir, $AuditDir | Out-Null
 
@@ -504,6 +505,16 @@ function Register-HermesManualTask([string]$TaskName, [string]$ScriptPath) {
     }
 }
 
+function Test-HermesTaskRunning([string]$TaskName) {
+    try {
+        Import-Module ScheduledTasks -ErrorAction Stop
+        $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+        return $null -ne $task -and $task.State.ToString() -eq "Running"
+    } catch {
+        return $false
+    }
+}
+
 function Start-HermesProcess(
     [string]$TaskName,
     [string]$ScriptPath,
@@ -758,13 +769,15 @@ function Install-HermesIfNeeded {
     }
     if ($AuditOnly) { throw "Hermes Agent is not installed or is broken." }
     Write-Info "Installing Hermes Agent for native Windows..."
+    Write-Info "The official installer can take several minutes on a clean Windows host; setup will wait safely."
     $installer = Join-Path ([IO.Path]::GetTempPath()) "hermes-agent-install.ps1"
     Invoke-WebRequest -Uri "https://hermes-agent.nousresearch.com/install.ps1" `
         -OutFile $installer -UseBasicParsing
     try {
         $arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$installer`" " +
             "-SkipSetup -NonInteractive -HermesHome `"$HermesHome`" -InstallDir `"$InstallDir`""
-        Invoke-HiddenProcess (Get-PowerShellExecutable) $arguments 180 `
+        Invoke-HiddenProcess (Get-PowerShellExecutable) $arguments `
+            $script:HermesInstallTimeoutSeconds `
             (Join-Path $AuditDir "hermes-install.out.log") `
             (Join-Path $AuditDir "hermes-install.err.log")
     } finally {
@@ -1148,7 +1161,7 @@ If fso.FolderExists(nodePath) Then
   sh.Environment("Process")("PATH") = nodePath & ";" & sh.Environment("Process")("PATH")
 End If
 exe = fso.BuildPath(home, "hermes-agent\venv\Scripts\hermes.exe")
-dist = fso.BuildPath(home, "hermes-agent\web\dist\index.html")
+dist = fso.BuildPath(home, "hermes-agent\hermes_cli\web_dist\index.html")
 command = Chr(34) & exe & Chr(34) & " dashboard --host __BIND_HOST__ --port 9119 --no-open"
 If fso.FileExists(dist) Then command = command & " --skip-build"
 rc = sh.Run(command, 0, True)
@@ -1222,9 +1235,6 @@ WScript.Quit rc
         [bool]$script:TaskDefinitionsChanged["HermesConsole-Gateway"]
     $bridgeChanged = $script:BridgeChanged -or [bool]$script:RunnerChanged["hermes-bridge"] -or
         [bool]$script:TaskDefinitionsChanged["HermesConsole-MobileBridge"]
-    $dashboardChanged = [bool]$script:RunnerChanged["hermes-dashboard"] -or
-        [bool]$script:TaskDefinitionsChanged["HermesConsole-Dashboard"]
-
     $gatewayHealthy = Test-HermesService "gateway" "http://127.0.0.1:8642" $ApiKey
     if (-not $gatewayHealthy -or ($gatewayTask -and $gatewayChanged)) {
         Start-HermesProcess "HermesConsole-Gateway" $gatewayRunner $gatewayTask 8642
@@ -1260,7 +1270,6 @@ WScript.Quit rc
     if ($currentCredentials.ok -ne $true) {
         throw "Dashboard credential endpoint rejected the read."
     }
-    $dashboardCredentialsChanged = $false
     if ($currentCredentials.password_set -ne $true) {
         $passwordBytes = New-Object byte[] 24
         $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
@@ -1273,25 +1282,28 @@ WScript.Quit rc
         if ($credentials.ok -ne $true) {
             throw "Dashboard credential endpoint rejected the configuration."
         }
-        $dashboardCredentialsChanged = $true
         Write-Audit "Dashboard credentials" "OK" "Created through the authenticated Mobile Bridge"
     } else {
         Write-Audit "Dashboard credentials" "SKIP" "Existing password retained"
     }
 
     $dashboardHealthy = Test-HermesService "dashboard" "http://127.0.0.1:9119" $ApiKey
-    $dashboardMustRestart = -not $dashboardHealthy -or $dashboardCredentialsChanged -or
-        ($dashboardTask -and $dashboardChanged)
-    if ($dashboardMustRestart) {
-        if (-not $dashboardTask -and $dashboardHealthy) {
-            try { & $HermesExe dashboard --stop *> $null } catch {}
-            Wait-PortRelease 9119 5
-        }
+    $dashboardStarting = $dashboardTask -and
+        (Test-HermesTaskRunning "HermesConsole-Dashboard")
+    if (-not $dashboardHealthy -and -not $dashboardStarting) {
         Start-HermesProcess "HermesConsole-Dashboard" $dashboardRunner $dashboardTask 9119
+    } elseif ($dashboardStarting -and -not $dashboardHealthy) {
+        # A previous setup can have timed out while npm/Vite kept building in
+        # the persistent task. Restarting here creates a second build and can
+        # leave an orphan on 9119. Reuse the in-flight canonical task instead.
+        Write-Audit "Dashboard service" "INFO" "Existing Dashboard startup/build is still running; waiting"
     } else {
         Write-Audit "Dashboard service" "SKIP" "Already healthy with its existing build"
     }
-    if (-not (Wait-HermesService "dashboard" "http://127.0.0.1:9119" $ApiKey 25)) {
+    # A first native-Windows launch may need npm install + the Vite build.
+    # Hermes itself allows a long idle window for that work; do not fail the
+    # setup after 25 seconds while the Scheduled Task is still building.
+    if (-not (Wait-HermesService "dashboard" "http://127.0.0.1:9119" $ApiKey 240)) {
         throw "Dashboard readiness failed. Check Node.js/PATH, its Scheduled Task and TCP 9119."
     }
     Write-Ok "Dashboard identity and Gateway state passed on 9119"
