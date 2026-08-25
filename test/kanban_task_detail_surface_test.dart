@@ -12,12 +12,13 @@ void main() {
     bool readOnly = false,
     KanbanCommentAction? onAddComment,
     Size physicalSize = const Size(900, 1600),
+    Locale locale = const Locale('es'),
   }) async {
     tester.view.physicalSize = physicalSize;
     tester.view.devicePixelRatio = 1;
     await tester.pumpWidget(
       MaterialApp(
-        locale: const Locale('es'),
+        locale: locale,
         localizationsDelegates: Strings.localizationsDelegates,
         supportedLocales: Strings.supportedLocales,
         theme: AppTheme.fromId('dark'),
@@ -132,6 +133,29 @@ void main() {
 
     expect(submitted, 'Nueva pista');
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('zh_Hant muestra texto escrito de Hong Kong', (tester) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final detail = KanbanTaskDetail.fromJson({
+      'task': {
+        'id': 't1',
+        'title': 'Investigate',
+        'status': 'triage',
+        'diagnostics': [
+          {'kind': 'stuck', 'severity': 'warning', 'title': 'Stuck'},
+        ],
+      },
+    });
+
+    await pumpSurface(
+      tester,
+      detail: detail,
+      locale: const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
+    );
+
+    expect(find.text('診斷資料 · 1'), findsOneWidget);
   });
 
   testWidgets('solo lectura conserva inspección y bloquea mutaciones', (

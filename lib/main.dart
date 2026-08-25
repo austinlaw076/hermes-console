@@ -261,6 +261,13 @@ class AppLocales {
   /// Locale canónico para 繁體中文 (script Hant).
   static Locale get zhHant => AppLocaleResolve.zhHantLocale;
 
+  /// Único contrato público de locales de la interfaz.
+  static final List<Locale> supportedLocales = [
+    const Locale('es'),
+    const Locale('en'),
+    zhHant,
+  ];
+
   static final List<AppLocaleOption> all = [
     const AppLocaleOption('system', 'Sistema', null),
     const AppLocaleOption('es', 'Español', Locale('es')),
@@ -1873,7 +1880,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
               scrollBehavior: const MomentumScrollBehavior(),
               locale: AppLocales.byId(locId).locale,
               localizationsDelegates: Strings.localizationsDelegates,
-              supportedLocales: Strings.supportedLocales,
+              supportedLocales: AppLocales.supportedLocales,
               // Catálogos completos: es / en / zh_Hant. Manual fuerza el locale;
               // "Sistema" recibe el del dispositivo. Hans/CN → en (sin简体 ARB).
               // Ver [AppLocales.resolve].

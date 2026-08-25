@@ -16,6 +16,7 @@ import 'package:hermes_android/core/services/profile_pet_service.dart';
 import 'package:hermes_android/core/services/profile_pet_visual_adapter.dart';
 import 'package:hermes_android/core/services/tui_gateway_client.dart';
 import 'package:hermes_android/core/widgets/hermes_bot_face.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 
 const _imageDataUri =
@@ -247,6 +248,8 @@ Future<void> _pumpEditor(
   Size size = const Size(1000, 2600),
   double textScale = 1,
   double keyboardInset = 0,
+  Locale locale = const Locale('es'),
+  bool installAppLocalizations = false,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -258,7 +261,13 @@ Future<void> _pumpEditor(
   });
   await tester.pumpWidget(
     MaterialApp(
-      locale: const Locale('es'),
+      locale: locale,
+      localizationsDelegates: installAppLocalizations
+          ? Strings.localizationsDelegates
+          : null,
+      supportedLocales: installAppLocalizations
+          ? Strings.supportedLocales
+          : const [Locale('en')],
       home: Scaffold(
         body: Builder(
           builder: (context) => TextButton(
@@ -310,6 +319,17 @@ Future<void> _save(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('zh_Hant muestra texto escrito de Hong Kong', (tester) async {
+    await _pumpEditor(
+      tester,
+      assets: _FakeAssetsGateway(),
+      locale: const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
+      installAppLocalizations: true,
+    );
+
+    expect(find.text('編輯 Bot'), findsOneWidget);
+  });
+
   testWidgets(
     'Blobatar guardado manda sobre una mascota activa hasta elegirla',
     (tester) async {

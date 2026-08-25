@@ -6,5 +6,6 @@ output-localization-file: app_localizations.dart
 output-class: Strings
 nullable-getter: false
 
-# Base locale `zh` (app_zh.arb) is required by gen-l10n whenever zh_Hant exists;
-# content mirrors Traditional Chinese. Runtime AppLocales still maps Hans/CN → en.
+# Base locale `zh` (app_zh.arb) is required by gen-l10n whenever zh_Hant exists.
+# It is a technical gen-l10n fallback, not a public UI locale; runtime
+# AppLocales still maps bare zh, Hans, and CN → en.

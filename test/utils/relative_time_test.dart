@@ -42,4 +42,31 @@ void main() {
       '36m ago',
     );
   });
+
+  test('usa formato tradicional de Hong Kong para zh_Hant', () {
+    expect(
+      relativeTime(
+        stamp(const Duration(seconds: 20)),
+        languageCode: 'zh_Hant',
+        now: now,
+      ),
+      '剛剛',
+    );
+    expect(
+      relativeTime(
+        stamp(const Duration(minutes: 36)),
+        languageCode: 'zh_Hant',
+        now: now,
+      ),
+      '36 分鐘前',
+    );
+    expect(
+      relativeTime(
+        stamp(const Duration(hours: 2)),
+        languageCode: 'zh_Hant',
+        now: now,
+      ),
+      '2 小時前',
+    );
+  });
 }

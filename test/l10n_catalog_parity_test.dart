@@ -34,30 +34,54 @@ void main() {
     },
   );
 
+  test('el catálogo zh_Hant mantiene claves y placeholders con EN/ES', () {
+    final zhPath = File('lib/l10n/app_zh_Hant.arb');
+    expect(zhPath.existsSync(), isTrue, reason: 'falta app_zh_Hant.arb');
+    final es = _readCatalog('lib/l10n/app_es.arb');
+    final en = _readCatalog('lib/l10n/app_en.arb');
+    final zh = _readCatalog(zhPath.path);
+
+    expect(zh['@@locale'], 'zh_Hant');
+    expect(_messageKeys(zh), _messageKeys(en));
+    expect(_messageKeys(zh), _messageKeys(es));
+
+    for (final key in _messageKeys(en)) {
+      expect(
+        _placeholders(zh[key]),
+        _placeholders(en[key]),
+        reason: 'Los placeholders de $key deben coincidir en ZH/EN',
+      );
+    }
+
+    expect(zh['languageTraditionalChinese'], '繁體中文');
+    expect(zh['setLanguage'], '語言');
+    expect(zh['setLanguageSystem'], '系統');
+  });
+
   test(
-    'el catálogo zh_Hant mantiene claves y placeholders con EN/ES',
+    'el fallback técnico app_zh mantiene claves y placeholders con EN/ES',
     () {
-      final zhPath = File('lib/l10n/app_zh_Hant.arb');
-      expect(zhPath.existsSync(), isTrue, reason: 'falta app_zh_Hant.arb');
+      // app_zh.arb existe solo porque gen-l10n lo requiere para zh_Hant. No es
+      // un locale público: AppLocales resuelve zh sin Hant, zh_Hans y zh_CN a
+      // inglés. Debe conservar paridad para que la generación siga siendo
+      // válida, sin ampliar el contrato de idiomas de la UI.
+      final zhPath = File('lib/l10n/app_zh.arb');
+      expect(zhPath.existsSync(), isTrue, reason: 'falta app_zh.arb');
       final es = _readCatalog('lib/l10n/app_es.arb');
       final en = _readCatalog('lib/l10n/app_en.arb');
       final zh = _readCatalog(zhPath.path);
 
-      expect(zh['@@locale'], 'zh_Hant');
-      expect(_messageKeys(zh), _messageKeys(en));
+      expect(zh['@@locale'], 'zh');
       expect(_messageKeys(zh), _messageKeys(es));
+      expect(_messageKeys(zh), _messageKeys(en));
 
       for (final key in _messageKeys(en)) {
         expect(
           _placeholders(zh[key]),
           _placeholders(en[key]),
-          reason: 'Los placeholders de $key deben coincidir en ZH/EN',
+          reason: 'Los placeholders de $key deben coincidir en fallback ZH/EN',
         );
       }
-
-      expect(zh['languageTraditionalChinese'], '繁體中文');
-      expect(zh['setLanguage'], '語言');
-      expect(zh['setLanguageSystem'], '系統');
     },
   );
 
