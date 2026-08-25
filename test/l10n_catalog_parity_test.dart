@@ -35,6 +35,33 @@ void main() {
   );
 
   test(
+    'el catálogo zh_Hant mantiene claves y placeholders con EN/ES',
+    () {
+      final zhPath = File('lib/l10n/app_zh_Hant.arb');
+      expect(zhPath.existsSync(), isTrue, reason: 'falta app_zh_Hant.arb');
+      final es = _readCatalog('lib/l10n/app_es.arb');
+      final en = _readCatalog('lib/l10n/app_en.arb');
+      final zh = _readCatalog(zhPath.path);
+
+      expect(zh['@@locale'], 'zh_Hant');
+      expect(_messageKeys(zh), _messageKeys(en));
+      expect(_messageKeys(zh), _messageKeys(es));
+
+      for (final key in _messageKeys(en)) {
+        expect(
+          _placeholders(zh[key]),
+          _placeholders(en[key]),
+          reason: 'Los placeholders de $key deben coincidir en ZH/EN',
+        );
+      }
+
+      expect(zh['languageTraditionalChinese'], '繁體中文');
+      expect(zh['setLanguage'], '語言');
+      expect(zh['setLanguageSystem'], '系統');
+    },
+  );
+
+  test(
     'Notificaciones conserva la misma mayúscula inicial que cada pantalla',
     () {
       final es = _readCatalog('lib/l10n/app_es.arb');

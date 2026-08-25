@@ -84,3 +84,7 @@ releases/
 
 # CodeGraph local index (regenerable)
 .codegraph/
+
+# l10n translation build artifacts
+lib/l10n/.zh_hant_progress.json
+lib/l10n/zh_hant_build.log

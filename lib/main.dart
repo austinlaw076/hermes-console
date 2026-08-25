@@ -247,6 +247,9 @@ class AppLocaleOption {
 /// Catálogo de idiomas disponibles y persistencia del elegido. Mismo patrón que
 /// [AppFonts]. Por defecto sigue el idioma del sistema; los textos traducidos
 /// viven en `lib/l10n/*.arb` y se migran de forma incremental.
+///
+/// Locales soportados con catálogo completo: `es`, `en`, `zh_Hant` (繁體中文,
+/// estilo escrito de Hong Kong). El id `zh_Hant` se persiste tal cual.
 class AppLocales {
   AppLocales._();
 
@@ -254,14 +257,49 @@ class AppLocales {
   static const String prefKey = 'app_locale';
   static const String defaultId = 'system';
 
-  static const List<AppLocaleOption> all = [
-    AppLocaleOption('system', 'Sistema', null),
-    AppLocaleOption('es', 'Español', Locale('es')),
-    AppLocaleOption('en', 'English', Locale('en')),
+  /// Locale canónico para 繁體中文 (script Hant).
+  static final Locale zhHant = Locale.fromSubtags(
+    languageCode: 'zh',
+    scriptCode: 'Hant',
+  );
+
+  static final List<AppLocaleOption> all = [
+    const AppLocaleOption('system', 'Sistema', null),
+    const AppLocaleOption('es', 'Español', Locale('es')),
+    const AppLocaleOption('en', 'English', Locale('en')),
+    AppLocaleOption('zh_Hant', '繁體中文', zhHant),
   ];
 
   static AppLocaleOption byId(String? id) =>
       all.firstWhere((o) => o.id == id, orElse: () => all.first);
+
+  /// Resuelve el locale efectivo para MaterialApp.
+  ///
+  /// - Preferencias manuales llegan como [locale] ya forzado (`es`/`en`/`zh_Hant`).
+  /// - Modo sistema: [locale] es el del dispositivo.
+  /// - `zh` + Hant/HK/TW/MO → 繁中；`zh` Hans / CN → inglés (sin catálogo简体).
+  /// - Cualquier otro idioma no soportado → inglés.
+  static Locale resolve(Locale? locale) {
+    if (locale == null) return const Locale('en');
+    final lang = locale.languageCode.toLowerCase();
+    if (lang == 'es') return const Locale('es');
+    if (lang == 'en') return const Locale('en');
+    if (lang == 'zh') {
+      final script = locale.scriptCode?.toLowerCase();
+      final country = locale.countryCode?.toLowerCase();
+      if (script == 'hans') return const Locale('en');
+      if (country == 'cn' && script != 'hant') return const Locale('en');
+      if (script == 'hant' ||
+          country == 'hk' ||
+          country == 'tw' ||
+          country == 'mo') {
+        return zhHant;
+      }
+      // `zh` pelado es ambiguo; sin script/país no asumimos繁体.
+      return const Locale('en');
+    }
+    return const Locale('en');
+  }
 }
 
 class HermesApp extends StatefulWidget {
@@ -317,7 +355,7 @@ class HermesApp extends StatefulWidget {
     await prefs.setString(AppFonts.prefKey, id);
   }
 
-  /// Id del idioma activo (`system`, `es`, `en`). Por defecto, el del sistema.
+  /// Id del idioma activo (`system`, `es`, `en`, `zh_Hant`). Por defecto, el del sistema.
   static String getLocaleId(SharedPreferences prefs) {
     return prefs.getString(AppLocales.prefKey) ?? AppLocales.defaultId;
   }
@@ -1860,14 +1898,11 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
               locale: AppLocales.byId(locId).locale,
               localizationsDelegates: Strings.localizationsDelegates,
               supportedLocales: Strings.supportedLocales,
-              // El único idioma completo además del inglés es el español: si el
-              // sistema (o la elección manual) es español lo usamos; en cualquier
-              // otro caso caemos a inglés, nunca a un español a medias. Cubre los
-              // tres casos: elección manual 'es'/'en' y modo "Sistema" (locale
-              // nulo → llega el idioma del dispositivo).
+              // Catálogos completos: es / en / zh_Hant. Manual fuerza el locale;
+              // "Sistema" recibe el del dispositivo. Hans/CN → en (sin简体 ARB).
+              // Ver [AppLocales.resolve].
               localeResolutionCallback: (locale, supported) {
-                if (locale?.languageCode == 'es') return const Locale('es');
-                return const Locale('en');
+                return AppLocales.resolve(locale);
               },
               theme: AppFonts.applyToTheme(activeTheme, AppFonts.byId(font)),
               // Transición suave al cambiar de tema (sensación premium).
