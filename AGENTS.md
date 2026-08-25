@@ -1,5 +1,13 @@
 # Agent release boundaries
 
+## Codebase study / review entrypoint (mandatory first)
+
+Before any non-trivial review, study, RCA, or code change, follow
+`docs/CODEBASE_KG.md`: load Hermes skill bundle **`codebase-kg`**
+(`codegraph-codebase-analysis` + `code-wiki` + `domain-modeling`), refresh
+CodeGraph (`.codegraph/`), and read root `CONTEXT.md`. The maintainer human
+map lives at `~/.hermes/wikis/hermes-console/` when present.
+
 Read `docs/PROJECT_BRIEF.md`, `docs/SECURITY_POLICY.md` and
 `docs/RELEASE_DISTRIBUTION.md` before changing release or distribution files.
 

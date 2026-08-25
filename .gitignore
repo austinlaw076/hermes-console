@@ -81,3 +81,6 @@ releases/
 /.serena/
 /.rollback-snapshots/
 /docs/agent-handoffs/
+
+# CodeGraph local index (regenerable)
+.codegraph/
