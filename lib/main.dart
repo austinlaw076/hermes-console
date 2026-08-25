@@ -7,6 +7,7 @@ import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/l10n/app_locale_resolve.dart';
 import 'core/app_header_title.dart';
 import 'core/companion/data/companion_preferences.dart';
 import 'core/companion/data/companion_repository.dart';
@@ -258,10 +259,7 @@ class AppLocales {
   static const String defaultId = 'system';
 
   /// Locale canónico para 繁體中文 (script Hant).
-  static final Locale zhHant = Locale.fromSubtags(
-    languageCode: 'zh',
-    scriptCode: 'Hant',
-  );
+  static Locale get zhHant => AppLocaleResolve.zhHantLocale;
 
   static final List<AppLocaleOption> all = [
     const AppLocaleOption('system', 'Sistema', null),
@@ -275,31 +273,9 @@ class AppLocales {
 
   /// Resuelve el locale efectivo para MaterialApp.
   ///
-  /// - Preferencias manuales llegan como [locale] ya forzado (`es`/`en`/`zh_Hant`).
-  /// - Modo sistema: [locale] es el del dispositivo.
-  /// - `zh` + Hant/HK/TW/MO → 繁中；`zh` Hans / CN → inglés (sin catálogo简体).
-  /// - Cualquier otro idioma no soportado → inglés.
-  static Locale resolve(Locale? locale) {
-    if (locale == null) return const Locale('en');
-    final lang = locale.languageCode.toLowerCase();
-    if (lang == 'es') return const Locale('es');
-    if (lang == 'en') return const Locale('en');
-    if (lang == 'zh') {
-      final script = locale.scriptCode?.toLowerCase();
-      final country = locale.countryCode?.toLowerCase();
-      if (script == 'hans') return const Locale('en');
-      if (country == 'cn' && script != 'hant') return const Locale('en');
-      if (script == 'hant' ||
-          country == 'hk' ||
-          country == 'tw' ||
-          country == 'mo') {
-        return zhHant;
-      }
-      // `zh` pelado es ambiguo; sin script/país no asumimos繁体.
-      return const Locale('en');
-    }
-    return const Locale('en');
-  }
+  /// Delega en [AppLocaleResolve] (misma matriz que voz/notificaciones).
+  static Locale resolve(Locale? locale) =>
+      AppLocaleResolve.toLocale(AppLocaleResolve.fromLocale(locale));
 }
 
 class HermesApp extends StatefulWidget {

@@ -13,6 +13,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../l10n/app_locale_resolve.dart';
 import '../../main.dart';
 import '../models/agent_profile.dart';
 import '../models/connection.dart';
@@ -2580,134 +2581,115 @@ class _KanbanModelChoice {
 /// mantiene aquí hasta el próximo `gen-l10n` global para no regenerar archivos
 /// compartidos mientras otros lotes editan el catálogo en paralelo.
 class _Kanban020Copy {
-  final bool spanish;
+  final AppLocaleKind _kind;
 
-  const _Kanban020Copy._(this.spanish);
+  const _Kanban020Copy._(this._kind);
 
   factory _Kanban020Copy.forContext(BuildContext context) => _Kanban020Copy._(
-    Strings.of(context).localeName.toLowerCase().startsWith('es'),
+    AppLocaleResolve.fromLocale(Localizations.localeOf(context)),
   );
 
+  String _t(String es, String en, [String? zh]) =>
+      AppLocaleResolve.pick(_kind, es: es, en: en, zh: zh);
+
   String get bulkPartialTitle =>
-      spanish ? 'Algunas tareas no cambiaron' : 'Some tasks were not changed';
-  String bulkPartial(int ok, int failed) => spanish
-      ? '$ok archivadas; $failed no se pudieron cambiar.'
-      : '$ok archived; $failed could not be changed.';
-  String get actionUnavailable => spanish
-      ? 'Esta operación no está disponible en el servidor.'
-      : 'This operation is not available on the server.';
-  String get specify => spanish ? 'Especificar' : 'Specify';
-  String get specifyTitle => spanish ? 'Especificar tarea' : 'Specify task';
-  String get specifyBody => spanish
-      ? 'Hermes usará el modelo auxiliar para completar esta tarea de triage. Puede tardar varios minutos.'
-      : 'Hermes will use the auxiliary model to flesh out this triage task. This can take several minutes.';
+      _t('Algunas tareas no cambiaron', 'Some tasks were not changed', '部分任務未有變更');
+  String bulkPartial(int ok, int failed) => _t('$ok archivadas; $failed no se pudieron cambiar.', '$ok archived; $failed could not be changed.', '$ok 個已封存；$failed 個無法變更。');
+  String get actionUnavailable => _t('Esta operación no está disponible en el servidor.', 'This operation is not available on the server.', '伺服器上未有提供此操作。');
+  String get specify => _t('Especificar', 'Specify', '詳細說明');
+  String get specifyTitle => _t('Especificar tarea', 'Specify task', '詳細說明任務');
+  String get specifyBody => _t('Hermes usará el modelo auxiliar para completar esta tarea de triage. Puede tardar varios minutos.', 'Hermes will use the auxiliary model to flesh out this triage task. This can take several minutes.', 'Hermes 將使用輔助模型充實此分流任務的內容。這可能需時數分鐘。');
   String get specifyStarted =>
-      spanish ? 'La tarea se ha especificado.' : 'The task was specified.';
-  String get decompose => spanish ? 'Descomponer' : 'Decompose';
+      _t('La tarea se ha especificado.', 'The task was specified.', '任務已詳細說明。');
+  String get decompose => _t('Descomponer', 'Decompose', '拆解');
   String get decomposeTitle =>
-      spanish ? 'Descomponer en subtareas' : 'Decompose into child tasks';
-  String get decomposeBody => spanish
-      ? 'Hermes creará un grafo de subtareas y las asignará a perfiles compatibles. Puede tardar varios minutos.'
-      : 'Hermes will create a child-task graph and route it to compatible profiles. This can take several minutes.';
-  String decomposeResult(int count) => spanish
-      ? 'Descomposición completada: $count subtareas.'
-      : 'Decomposition complete: $count child tasks.';
-  String get attachmentTooLarge => spanish
-      ? 'El adjunto supera el límite oficial de 25 MiB.'
-      : 'The attachment exceeds the official 25 MiB limit.';
-  String get attachmentUnavailable => spanish
-      ? 'Android no pudo proporcionar este archivo.'
-      : 'Android could not provide this file.';
+      _t('Descomponer en subtareas', 'Decompose into child tasks', '拆解為子任務');
+  String get decomposeBody => _t('Hermes creará un grafo de subtareas y las asignará a perfiles compatibles. Puede tardar varios minutos.', 'Hermes will create a child-task graph and route it to compatible profiles. This can take several minutes.', 'Hermes 將建立子任務圖，並將其分派至相容的 profile。這可能需時數分鐘。');
+  String decomposeResult(int count) => _t('Descomposición completada: $count subtareas.', 'Decomposition complete: $count child tasks.', '拆解完成：$count 個子任務。');
+  String get attachmentTooLarge => _t('El adjunto supera el límite oficial de 25 MiB.', 'The attachment exceeds the official 25 MiB limit.', '附件超出官方 25 MiB 限制。');
+  String get attachmentUnavailable => _t('Android no pudo proporcionar este archivo.', 'Android could not provide this file.', 'Android 無法提供此檔案。');
   String get attachmentUploaded =>
-      spanish ? 'Adjunto subido.' : 'Attachment uploaded.';
-  String get saveAttachment => spanish ? 'Guardar adjunto' : 'Save attachment';
+      _t('Adjunto subido.', 'Attachment uploaded.', '附件已上載。');
+  String get saveAttachment => _t('Guardar adjunto', 'Save attachment', '儲存附件');
   String get attachmentSaved =>
-      spanish ? 'Adjunto guardado.' : 'Attachment saved.';
+      _t('Adjunto guardado.', 'Attachment saved.', '附件已儲存。');
   String get deleteAttachment =>
-      spanish ? 'Eliminar adjunto' : 'Delete attachment';
-  String deleteAttachmentBody(String name) => spanish
-      ? '¿Eliminar «$name» del servidor? Esta acción no se puede deshacer.'
-      : 'Delete “$name” from the server? This cannot be undone.';
-  String get delete => spanish ? 'Eliminar' : 'Delete';
+      _t('Eliminar adjunto', 'Delete attachment', '刪除附件');
+  String deleteAttachmentBody(String name) => _t('¿Eliminar «$name» del servidor? Esta acción no se puede deshacer.', 'Delete “$name” from the server? This cannot be undone.', '要從伺服器刪除「$name」嗎？此操作無法復原。');
+  String get delete => _t('Eliminar', 'Delete', '刪除');
   String get attachmentDeleted =>
-      spanish ? 'Adjunto eliminado.' : 'Attachment deleted.';
-  String get workerLog => spanish ? 'Log del worker' : 'Worker log';
-  String get noLog => spanish
-      ? 'Esta tarea todavía no tiene log.'
-      : 'This task does not have a log yet.';
-  String get logTruncated => spanish
-      ? 'Se muestra únicamente la cola más reciente del log.'
-      : 'Only the most recent log tail is shown.';
+      _t('Adjunto eliminado.', 'Attachment deleted.', '附件已刪除。');
+  String get workerLog => _t('Log del worker', 'Worker log', 'worker 記錄');
+  String get noLog => _t('Esta tarea todavía no tiene log.', 'This task does not have a log yet.', '此工作尚未有記錄。');
+  String get logTruncated => _t('Se muestra únicamente la cola más reciente del log.', 'Only the most recent log tail is shown.', '只顯示最新記錄的末尾部分。');
   String get runInspection =>
-      spanish ? 'Estado de la ejecución' : 'Run inspection';
-  String get alive => spanish ? 'Activo' : 'Alive';
-  String get yes => spanish ? 'Sí' : 'Yes';
+      _t('Estado de la ejecución', 'Run inspection', '執行檢查');
+  String get alive => _t('Activo', 'Alive', '運作中');
+  String get yes => _t('Sí', 'Yes', '是');
   String get no => 'No';
-  String get status => spanish ? 'Estado' : 'Status';
+  String get status => _t('Estado', 'Status', '狀態');
   String get memory => 'RAM';
-  String get threads => spanish ? 'Hilos' : 'Threads';
-  String get reason => spanish ? 'Motivo' : 'Reason';
+  String get threads => _t('Hilos', 'Threads', '執行緒');
+  String get reason => _t('Motivo', 'Reason', '原因');
   String get error => 'Error';
-  String get terminate => spanish ? 'Terminar' : 'Terminate';
-  String get terminateTitle => spanish ? 'Terminar ejecución' : 'Terminate run';
-  String terminateBody(int id) => spanish
-      ? 'Se detendrá el worker de la ejecución #$id y la tarea volverá a la cola. ¿Continuar?'
-      : 'The worker for run #$id will stop and the task will return to the queue. Continue?';
-  String get runTerminated => spanish
-      ? 'Ejecución terminada y reencolada.'
-      : 'Run terminated and requeued.';
-  String get reclaim => spanish ? 'Recuperar' : 'Reclaim';
+  String get terminate => _t('Terminar', 'Terminate', '終止');
+  String get terminateTitle => _t('Terminar ejecución', 'Terminate run', '終止執行');
+  String terminateBody(int id) => _t('Se detendrá el worker de la ejecución #$id y la tarea volverá a la cola. ¿Continuar?', 'The worker for run #$id will stop and the task will return to the queue. Continue?', '執行工作 #$id 的 worker 將會停止，而工作會返回佇列。繼續？');
+  String get runTerminated => _t('Ejecución terminada y reencolada.', 'Run terminated and requeued.', '執行已終止並重新加入佇列。');
+  String get reclaim => _t('Recuperar', 'Reclaim', '取回');
   String get reclaimTitle =>
-      spanish ? 'Recuperar tarea atascada' : 'Reclaim stuck task';
-  String get reclaimBody => spanish
-      ? 'Se detendrá el worker actual y la tarea volverá a «En cola». Úsalo solo si la ejecución está atascada.'
-      : 'The current worker will stop and the task will return to the queue. Use this only for a stuck run.';
-  String get taskReclaimed => spanish
-      ? 'Tarea recuperada y reencolada.'
-      : 'Task reclaimed and requeued.';
-  String get chooseProfile => spanish ? 'Elegir perfil' : 'Choose profile';
-  String get reassign => spanish ? 'Reasignar' : 'Reassign';
-  String get reassignTitle => spanish ? 'Reasignar tarea' : 'Reassign task';
-  String reassignBody(String profile, bool reclaims) => spanish
-      ? 'La tarea se asignará a «$profile».${reclaims ? ' El worker actual se detendrá primero.' : ''}'
-      : 'The task will be assigned to “$profile”.${reclaims ? ' The current worker will be stopped first.' : ''}';
+      _t('Recuperar tarea atascada', 'Reclaim stuck task', '取回卡住的工作');
+  String get reclaimBody => _t('Se detendrá el worker actual y la tarea volverá a «En cola». Úsalo solo si la ejecución está atascada.', 'The current worker will stop and the task will return to the queue. Use this only for a stuck run.', '目前的 worker 將會停止，而工作會返回佇列。只應在執行工作卡住時使用。');
+  String get taskReclaimed => _t('Tarea recuperada y reencolada.', 'Task reclaimed and requeued.', '任務已收回並重新排入佇列。');
+  String get chooseProfile => _t('Elegir perfil', 'Choose profile', '選擇 profile');
+  String get reassign => _t('Reasignar', 'Reassign', '重新指派');
+  String get reassignTitle => _t('Reasignar tarea', 'Reassign task', '重新指派任務');
+  String reassignBody(String profile, bool reclaims) {
+    final esExtra = reclaims ? ' El worker actual se detendrá primero.' : '';
+    final enExtra =
+        reclaims ? ' The current worker will be stopped first.' : '';
+    final zhExtra = reclaims ? ' 會先停止目前的 worker。' : '';
+    return _t(
+      'La tarea se asignará a «$profile».$esExtra',
+      'The task will be assigned to “$profile”.$enExtra',
+      '任務會指派給「$profile」。$zhExtra',
+    );
+  }
   String get taskReassigned =>
-      spanish ? 'Tarea reasignada.' : 'Task reassigned.';
-  String get modelOptionsUnavailable => spanish
-      ? 'Este servidor no publica opciones de modelo para Kanban.'
-      : 'This server does not publish Kanban model options.';
+      _t('Tarea reasignada.', 'Task reassigned.', '任務已重新指派。');
+  String get modelOptionsUnavailable => _t('Este servidor no publica opciones de modelo para Kanban.', 'This server does not publish Kanban model options.', '此伺服器沒有發佈 Kanban 模型選項。');
   String get chooseModel =>
-      spanish ? 'Modelo para esta tarea' : 'Model for this task';
+      _t('Modelo para esta tarea', 'Model for this task', '此任務的模型');
   String get inheritModel =>
-      spanish ? 'Heredar modelo del perfil' : 'Inherit model from profile';
+      _t('Heredar modelo del perfil', 'Inherit model from profile', '從 profile 繼承模型');
   String get reasoningEffort =>
-      spanish ? 'Esfuerzo de razonamiento' : 'Reasoning effort';
+      _t('Esfuerzo de razonamiento', 'Reasoning effort', '推理力度');
   String get inheritEffort =>
-      spanish ? 'Heredar esfuerzo del perfil' : 'Inherit effort from profile';
+      _t('Heredar esfuerzo del perfil', 'Inherit effort from profile', '從 profile 繼承力度');
   String effortLabel(String value) {
-    if (value == 'none') return spanish ? 'Desactivado' : 'Off';
-    if (value == 'minimal') return spanish ? 'Mínimo' : 'Minimal';
-    if (value == 'low') return spanish ? 'Bajo' : 'Low';
-    if (value == 'medium') return spanish ? 'Medio' : 'Medium';
-    if (value == 'high') return spanish ? 'Alto' : 'High';
-    if (value == 'xhigh') return spanish ? 'Muy alto' : 'XHigh';
-    if (value == 'max') return spanish ? 'Máximo' : 'Max';
+    if (value == 'none') return _t('Desactivado', 'Off', '關閉');
+    if (value == 'minimal') return _t('Mínimo', 'Minimal', '最低');
+    if (value == 'low') return _t('Bajo', 'Low', '低');
+    if (value == 'medium') return _t('Medio', 'Medium', '中');
+    if (value == 'high') return _t('Alto', 'High', '高');
+    if (value == 'xhigh') return _t('Muy alto', 'XHigh', '極高');
+    if (value == 'max') return _t('Máximo', 'Max', '最大');
     return 'Ultra';
   }
 
   String get applyModelTitle =>
-      spanish ? 'Aplicar configuración de modelo' : 'Apply model configuration';
+      _t('Aplicar configuración de modelo', 'Apply model configuration', '套用模型設定');
   String applyModelBody(String model, String effort) {
     final effortLabelValue = effort.isEmpty
         ? inheritEffort
         : effortLabel(effort);
-    return spanish
-        ? 'Modelo: $model\nRazonamiento: $effortLabelValue'
-        : 'Model: $model\nReasoning: $effortLabelValue';
+    return _t(
+      'Modelo: $model\nRazonamiento: $effortLabelValue',
+      'Model: $model\nReasoning: $effortLabelValue',
+      '模型：$model\n推理：$effortLabelValue',
+    );
   }
 
-  String get apply => spanish ? 'Aplicar' : 'Apply';
-  String get modelApplied => spanish
-      ? 'Configuración de modelo aplicada.'
-      : 'Model configuration applied.';
+  String get apply => _t('Aplicar', 'Apply', '套用');
+  String get modelApplied => _t('Configuración de modelo aplicada.', 'Model configuration applied.', '模型設定已套用。');
 }

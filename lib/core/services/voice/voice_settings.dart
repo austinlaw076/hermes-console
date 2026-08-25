@@ -428,15 +428,15 @@ class VoiceSettings {
   static const _kCustomMime = 'voice_custom_tts_mime_type';
 
   /// Voz neuronal propuesta cuando el usuario nunca eligió (spec 031). En
-  /// español es la histórica (regresión cero); en inglés, Amy (en el catálogo).
+  /// español es la histórica (regresión cero); en inglés/zh, Amy (en el catálogo).
   static String defaultOnnxVoiceFor(String lang) =>
-      lang == 'en' ? 'en_US-amy-medium' : 'es_ES-davefx-medium';
+      lang == 'es' ? 'es_ES-davefx-medium' : 'en_US-amy-medium';
 
   /// Voz del TTS por streaming cuando el usuario nunca eligió (spec 031). En
   /// Kokoro `em_santa` es la voz española histórica; `af_heart` la insignia
-  /// americana.
+  /// americana (también fallback de zh_Hant hasta haber voz zh nativa).
   static String defaultStreamingVoiceFor(String lang) =>
-      lang == 'en' ? 'af_heart' : 'em_santa';
+      lang == 'es' ? 'em_santa' : 'af_heart';
 
   static VoiceSettings load(SharedPreferences prefs) {
     const d = VoiceSettings();

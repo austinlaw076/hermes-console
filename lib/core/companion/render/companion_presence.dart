@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_locale_resolve.dart';
 import '../../widgets/hermes_spark_mascot.dart';
 import '../models/companion_presence_level.dart';
 import '../state/companion_controller.dart';
@@ -34,16 +35,39 @@ class CompanionPresence extends StatelessWidget {
     this.showLabel = false,
   });
 
-  static String? labelFor(HermesSparkMood mood) {
+  static String? labelFor(
+    HermesSparkMood mood, [
+    AppLocaleKind kind = AppLocaleKind.es,
+  ]) {
     switch (mood) {
       case HermesSparkMood.thinking:
-        return 'Pensando…';
+        return AppLocaleResolve.pick(
+          kind,
+          es: 'Pensando…',
+          en: 'Thinking…',
+          zh: '思考中…',
+        );
       case HermesSparkMood.waiting:
-        return 'Esperando permiso…';
+        return AppLocaleResolve.pick(
+          kind,
+          es: 'Esperando permiso…',
+          en: 'Waiting for permission…',
+          zh: '等待權限…',
+        );
       case HermesSparkMood.connecting:
-        return 'Conectando…';
+        return AppLocaleResolve.pick(
+          kind,
+          es: 'Conectando…',
+          en: 'Connecting…',
+          zh: '連線中…',
+        );
       case HermesSparkMood.offline:
-        return 'Sin conexión';
+        return AppLocaleResolve.pick(
+          kind,
+          es: 'Sin conexión',
+          en: 'Offline',
+          zh: '離線',
+        );
       case HermesSparkMood.idle:
       case HermesSparkMood.success:
       case HermesSparkMood.error:
@@ -78,7 +102,9 @@ class CompanionPresence extends StatelessWidget {
 
         // El texto solo aparece en nivel "completa".
         if (!showLabel || !companion.presenceLevel.showsLabel) return mascot;
-        final label = labelFor(mood);
+        final kind =
+            AppLocaleResolve.fromLocale(Localizations.localeOf(context));
+        final label = labelFor(mood, kind);
         if (label == null) return mascot;
 
         return Row(

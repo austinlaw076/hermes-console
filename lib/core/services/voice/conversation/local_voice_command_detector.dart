@@ -26,6 +26,8 @@ class LocalVoiceCommandDetector {
     final grammar = switch (languageCode) {
       'es' => _spanish,
       'en' => _english,
+      // 繁中 UI → motor 'zh': hasta gramática propia, controles en inglés.
+      'zh' => _english,
       _ => null,
     };
     if (grammar == null) return null;

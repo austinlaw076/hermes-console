@@ -58,6 +58,7 @@ import '../models/prepared_turn.dart';
 import '../models/session_artifact.dart';
 import '../models/subagent_activity.dart';
 import '../navigation/chat_route.dart';
+import '../l10n/app_locale_resolve.dart';
 import '../services/active_chat_service.dart';
 import '../services/approval_policy.dart';
 import '../services/artifact_export_service.dart';
@@ -1719,19 +1720,15 @@ class _ChatScreenState extends State<ChatScreen>
       final acknowledged =
           prepared.state == PreparedTurnState.accepted ||
           prepared.state == PreparedTurnState.running;
-      final english = Localizations.localeOf(context).languageCode == 'en';
+      final localeKind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             ambiguous
                 ? Strings.of(context).chaAmbiguousRestored
                 : acknowledged
-                ? english
-                      ? 'Hermes could not reattach a manager turn that may still be running. Worker tasks stay blocked. Send retries the check; discard only after verifying Hermes because this does not cancel the remote turn.'
-                      : 'Hermes no pudo reanexar un turno del manager que aún podría seguir activo. Las tareas worker quedan bloqueadas. Enviar repite la comprobación; descarta solo tras verificar Hermes porque esto no cancela el turno remoto.'
-                : english
-                ? 'A pending manager turn was recovered. The Room task stays unchanged; discard the manager recovery to continue.'
-                : 'Se recuperó un turno pendiente del manager. La tarea de la Sala sigue intacta; descarta la recuperación del manager para continuar.',
+                ? AppLocaleResolve.pick(localeKind, es: 'Hermes no pudo reanexar un turno del manager que aún podría seguir activo. Las tareas worker quedan bloqueadas. Enviar repite la comprobación; descarta solo tras verificar Hermes porque esto no cancela el turno remoto.', en: 'Hermes could not reattach a manager turn that may still be running. Worker tasks stay blocked. Send retries the check; discard only after verifying Hermes because this does not cancel the remote turn.', zh: 'Hermes 無法重新連接一個可能仍在執行中的管理員回合。工作人員任務會維持封鎖。按「傳送」會重試檢查；只有在核實 Hermes 後才可捨棄，因為這不會取消遠端回合。')
+                : AppLocaleResolve.pick(localeKind, es: 'Se recuperó un turno pendiente del manager. La tarea de la Sala sigue intacta; descarta la recuperación del manager para continuar.', en: 'A pending manager turn was recovered. The Room task stays unchanged; discard the manager recovery to continue.', zh: '已恢復擱置中的管理員回合。Room 任務維持不變；捨棄管理員恢復狀態即可繼續。'),
           ),
           duration: const Duration(seconds: 8),
           action: SnackBarAction(
@@ -4678,13 +4675,11 @@ class _ChatScreenState extends State<ChatScreen>
         _showHiddenRecoveredTurn(recovered);
         return false;
       }
-      final english = Localizations.localeOf(context).languageCode == 'en';
+      final localeKind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            english
-                ? 'Wait for the manager turn to finish before creating a worker task.'
-                : 'Espera a que termine el turno del manager antes de crear una tarea para un worker.',
+            AppLocaleResolve.pick(localeKind, es: 'Espera a que termine el turno del manager antes de crear una tarea para un worker.', en: 'Wait for the manager turn to finish before creating a worker task.', zh: '請等待管理員回合完成後，再建立工作人員任務。'),
           ),
         ),
       );
@@ -4695,14 +4690,12 @@ class _ChatScreenState extends State<ChatScreen>
         parsed.invalidSelections.isEmpty) {
       return null;
     }
-    final english = Localizations.localeOf(context).languageCode == 'en';
+    final localeKind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
     if (!parsed.canDispatch || parsed.intent == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            english
-                ? 'Select one current room member from the mention list. Multiple workers are not sent automatically.'
-                : 'Selecciona un miembro actual desde la lista de menciones. No se envía a varios workers automáticamente.',
+            AppLocaleResolve.pick(localeKind, es: 'Selecciona un miembro actual desde la lista de menciones. No se envía a varios workers automáticamente.', en: 'Select one current room member from the mention list. Multiple workers are not sent automatically.', zh: '請從提及清單中選取一名目前的房間成員。系統不會自動傳送多個工作人員任務。'),
           ),
         ),
       );
@@ -4712,9 +4705,7 @@ class _ChatScreenState extends State<ChatScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            english
-                ? 'Worker delegation does not attach files in this version. Send the files to the manager or add them from Kanban.'
-                : 'La delegación a workers no adjunta archivos en esta versión. Envíalos al manager o añádelos desde Kanban.',
+            AppLocaleResolve.pick(localeKind, es: 'La delegación a workers no adjunta archivos en esta versión. Envíalos al manager o añádelos desde Kanban.', en: 'Worker delegation does not attach files in this version. Send the files to the manager or add them from Kanban.', zh: '此版本的工作人員委派不會附加檔案。請將檔案傳送給管理員，或從 Kanban 加入檔案。'),
           ),
         ),
       );
@@ -4734,7 +4725,7 @@ class _ChatScreenState extends State<ChatScreen>
           room: room,
           intent: intent,
           text: text,
-          english: english,
+          localeKind: localeKind,
         );
       }
       final creator = widget.missionRoomTaskCreator;
@@ -4757,9 +4748,7 @@ class _ChatScreenState extends State<ChatScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    english
-                        ? 'This Hermes version cannot prove safe idempotent task creation. Update Hermes to use worker mentions.'
-                        : 'Esta versión de Hermes no puede demostrar una creación idempotente segura. Actualiza Hermes para usar menciones a workers.',
+                    AppLocaleResolve.pick(localeKind, es: 'Esta versión de Hermes no puede demostrar una creación idempotente segura. Actualiza Hermes para usar menciones a workers.', en: 'This Hermes version cannot prove safe idempotent task creation. Update Hermes to use worker mentions.', zh: '此 Hermes 版本無法證明建立任務時可安全地保持冪等性。請更新 Hermes 以使用工作人員提及。'),
                   ),
                 ),
               );
@@ -4774,9 +4763,7 @@ class _ChatScreenState extends State<ChatScreen>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  english
-                      ? 'Hermes task capabilities could not be verified. No task was written.'
-                      : 'No se pudieron verificar las capacidades de tareas de Hermes. No se escribió ninguna tarea.',
+                  AppLocaleResolve.pick(localeKind, es: 'No se pudieron verificar las capacidades de tareas de Hermes. No se escribió ninguna tarea.', en: 'Hermes task capabilities could not be verified. No task was written.', zh: '無法核實 Hermes 的任務功能。未寫入任何任務。'),
                 ),
               ),
             );
@@ -4801,9 +4788,7 @@ class _ChatScreenState extends State<ChatScreen>
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: Text(
-            english
-                ? 'Create native Kanban task?'
-                : '¿Crear tarea Kanban nativa?',
+            AppLocaleResolve.pick(localeKind, es: '¿Crear tarea Kanban nativa?', en: 'Create native Kanban task?', zh: '建立原生 Kanban 任務？'),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -4814,16 +4799,12 @@ class _ChatScreenState extends State<ChatScreen>
               Text(intent.taskTitle),
               const SizedBox(height: 8),
               Text(
-                english
-                    ? 'Board: ${taskTarget.displayName}'
-                    : 'Tablero: ${taskTarget.displayName}',
+                AppLocaleResolve.pick(localeKind, es: 'Tablero: ${taskTarget.displayName}', en: 'Board: ${taskTarget.displayName}', zh: '看板：${taskTarget.displayName}'),
                 style: Theme.of(dialogContext).textTheme.labelMedium,
               ),
               const SizedBox(height: 12),
               Text(
-                english
-                    ? 'Confirming writes one task to Hermes Kanban. If the dispatcher is active, work may start immediately. This text is not also sent to the manager.'
-                    : 'Al confirmar se escribe una tarea en Kanban de Hermes. Si el dispatcher está activo, el trabajo puede empezar inmediatamente. Este texto no se envía también al manager.',
+                AppLocaleResolve.pick(localeKind, es: 'Al confirmar se escribe una tarea en Kanban de Hermes. Si el dispatcher está activo, el trabajo puede empezar inmediatamente. Este texto no se envía también al manager.', en: 'Confirming writes one task to Hermes Kanban. If the dispatcher is active, work may start immediately. This text is not also sent to the manager.', zh: '確認後會在 Hermes Kanban 寫入一項任務。如果調度器已啟用，工作可能會立即開始。此文字不會同時傳送給管理員。'),
                 style: Theme.of(dialogContext).textTheme.bodySmall,
               ),
             ],
@@ -4838,7 +4819,7 @@ class _ChatScreenState extends State<ChatScreen>
             FilledButton(
               key: const ValueKey('room-confirm-task'),
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(english ? 'Create task' : 'Crear tarea'),
+              child: Text(AppLocaleResolve.pick(localeKind, es: 'Crear tarea', en: 'Create task', zh: '建立任務')),
             ),
           ],
         ),
@@ -4879,9 +4860,7 @@ class _ChatScreenState extends State<ChatScreen>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  english
-                      ? '@${intent.workerProfile} is no longer in the authoritative Kanban roster. No task was written.'
-                      : '@${intent.workerProfile} ya no aparece en el roster autoritativo de Kanban. No se escribió ninguna tarea.',
+                  AppLocaleResolve.pick(localeKind, es: '@${intent.workerProfile} ya no aparece en el roster autoritativo de Kanban. No se escribió ninguna tarea.', en: '@${intent.workerProfile} is no longer in the authoritative Kanban roster. No task was written.', zh: '@${intent.workerProfile} 已不在權威 Kanban 名單內。未寫入任何任務。'),
                 ),
               ),
             );
@@ -4930,9 +4909,7 @@ class _ChatScreenState extends State<ChatScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              english
-                  ? 'Task ${task.id} created for @${intent.workerProfile}'
-                  : 'Tarea ${task.id} creada para @${intent.workerProfile}',
+              AppLocaleResolve.pick(localeKind, es: 'Tarea ${task.id} creada para @${intent.workerProfile}', en: 'Task ${task.id} created for @${intent.workerProfile}', zh: '已為 @${intent.workerProfile} 建立任務 ${task.id}'),
             ),
           ),
         );
@@ -4951,7 +4928,7 @@ class _ChatScreenState extends State<ChatScreen>
               room: room,
               intent: intent,
               text: text,
-              english: english,
+              localeKind: localeKind,
               client: ownedClient,
             );
           }
@@ -4961,16 +4938,10 @@ class _ChatScreenState extends State<ChatScreen>
             SnackBar(
               content: Text(
                 writeStarted && !_isDeterministicRoomTaskWriteFailure(error)
-                    ? english
-                          ? 'Hermes did not confirm the task. The draft and idempotency key are kept; verify Kanban before retrying.'
-                          : 'Hermes no confirmó la tarea. Se conservan el borrador y la clave idempotente; verifica Kanban antes de reintentar.'
+                    ? AppLocaleResolve.pick(localeKind, es: 'Hermes no confirmó la tarea. Se conservan el borrador y la clave idempotente; verifica Kanban antes de reintentar.', en: 'Hermes did not confirm the task. The draft and idempotency key are kept; verify Kanban before retrying.', zh: 'Hermes 未確認該任務。草稿及冪等金鑰已保留；重試前請先核實 Kanban。')
                     : writeStarted
-                    ? english
-                          ? 'Hermes rejected the task deterministically. No task was written; the draft is kept.'
-                          : 'Hermes rechazó la tarea de forma determinista. No se escribió ninguna tarea; se conserva el borrador.'
-                    : english
-                    ? 'The authoritative Kanban roster could not be refreshed. No task was written.'
-                    : 'No se pudo actualizar el roster autoritativo de Kanban. No se escribió ninguna tarea.',
+                    ? AppLocaleResolve.pick(localeKind, es: 'Hermes rechazó la tarea de forma determinista. No se escribió ninguna tarea; se conserva el borrador.', en: 'Hermes rejected the task deterministically. No task was written; the draft is kept.', zh: 'Hermes 已確定拒絕該任務。未寫入任何任務；草稿已保留。')
+                    : AppLocaleResolve.pick(localeKind, es: 'No se pudo actualizar el roster autoritativo de Kanban. No se escribió ninguna tarea.', en: 'The authoritative Kanban roster could not be refreshed. No task was written.', zh: '無法重新整理權威 Kanban 名單。未寫入任何工作。'),
               ),
             ),
           );
@@ -4996,7 +4967,7 @@ class _ChatScreenState extends State<ChatScreen>
     required MissionRoom room,
     required MissionMentionIntent intent,
     required String text,
-    required bool english,
+    required AppLocaleKind localeKind,
     KanbanClient? client,
   }) async {
     final boardId = _roomTaskBoardId;
@@ -5037,9 +5008,7 @@ class _ChatScreenState extends State<ChatScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              english
-                  ? 'The previous task result is still unknown. Kanban was checked and no new task was sent. Clear the mention only after verifying the board.'
-                  : 'El resultado de la tarea anterior sigue siendo incierto. Se comprobó Kanban y no se envió otra tarea. Borra la mención solo después de verificar el tablero.',
+              AppLocaleResolve.pick(localeKind, es: 'El resultado de la tarea anterior sigue siendo incierto. Se comprobó Kanban y no se envió otra tarea. Borra la mención solo después de verificar el tablero.', en: 'The previous task result is still unknown. Kanban was checked and no new task was sent. Clear the mention only after verifying the board.', zh: '先前的工作結果仍然未知。已檢查 Kanban，沒有發送新工作。確認看板後才清除提及。'),
             ),
           ),
         );
@@ -5063,9 +5032,7 @@ class _ChatScreenState extends State<ChatScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          english
-              ? 'Recovered task ${recovered.id} for @${intent.workerProfile}'
-              : 'Tarea ${recovered.id} recuperada para @${intent.workerProfile}',
+          AppLocaleResolve.pick(localeKind, es: 'Tarea ${recovered.id} recuperada para @${intent.workerProfile}', en: 'Recovered task ${recovered.id} for @${intent.workerProfile}', zh: '已為 @${intent.workerProfile} 復原工作 ${recovered.id}'),
         ),
       ),
     );
@@ -5149,13 +5116,11 @@ class _ChatScreenState extends State<ChatScreen>
     if (!mounted) return false;
     if (roomRouting != null) return roomRouting;
     if (widget.missionRoom != null && !_chat.canBindDurableMissionSession) {
-      final english = Localizations.localeOf(context).languageCode == 'en';
+      final localeKind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            english
-                ? 'This connection cannot prove a durable Hermes manager session. Nothing was sent.'
-                : 'Esta conexión no puede demostrar una sesión durable del manager en Hermes. No se envió nada.',
+            AppLocaleResolve.pick(localeKind, es: 'Esta conexión no puede demostrar una sesión durable del manager en Hermes. No se envió nada.', en: 'This connection cannot prove a durable Hermes manager session. Nothing was sent.', zh: '此連線無法證明持久的 Hermes 管理員工作階段。未發送任何內容。'),
           ),
         ),
       );
@@ -7382,7 +7347,7 @@ class _ChatScreenState extends State<ChatScreen>
   void _showMissionRoomMembers() {
     final room = widget.missionRoom;
     if (room == null) return;
-    final english = Localizations.localeOf(context).languageCode == 'en';
+    final localeKind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
     showHermesFloatingSurface<void>(
       context: context,
       surfaceKey: const ValueKey('mission-room-members'),
@@ -7395,9 +7360,7 @@ class _ChatScreenState extends State<ChatScreen>
           Text('#${room.name}', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 4),
           Text(
-            english
-                ? 'The manager owns this conversation. Workers receive work only through a confirmed native Kanban task.'
-                : 'El manager es propietario de esta conversación. Los workers solo reciben trabajo mediante una tarea Kanban nativa confirmada.',
+            AppLocaleResolve.pick(localeKind, es: 'El manager es propietario de esta conversación. Los workers solo reciben trabajo mediante una tarea Kanban nativa confirmada.', en: 'The manager owns this conversation. Workers receive work only through a confirmed native Kanban task.', zh: '管理員擁有此對話。工作人員只會透過已確認的原生 Kanban 工作接收工作。'),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -7416,12 +7379,8 @@ class _ChatScreenState extends State<ChatScreen>
               title: Text('@$profile'),
               subtitle: Text(
                 profile == room.managerProfile
-                    ? (english
-                          ? 'Manager · chat owner'
-                          : 'Manager · dueño del chat')
-                    : (english
-                          ? 'Worker · Kanban target'
-                          : 'Worker · destino Kanban'),
+                    ? (AppLocaleResolve.pick(localeKind, es: 'Manager · dueño del chat', en: 'Manager · chat owner', zh: '管理員 · 對話擁有者'))
+                    : (AppLocaleResolve.pick(localeKind, es: 'Worker · destino Kanban', en: 'Worker · Kanban target', zh: '工作人員 · Kanban 目標')),
               ),
             ),
         ],
@@ -7555,9 +7514,14 @@ class _ChatScreenState extends State<ChatScreen>
                 IconButton(
                   key: const ValueKey('mission-room-members-appbar'),
                   icon: const Icon(Icons.group_outlined),
-                  tooltip: Localizations.localeOf(context).languageCode == 'en'
-                      ? 'Room members'
-                      : 'Miembros de la sala',
+                  tooltip: AppLocaleResolve.pick(
+                    AppLocaleResolve.fromLocale(
+                      Localizations.localeOf(context),
+                    ),
+                    es: 'Miembros de la sala',
+                    en: 'Room members',
+                    zh: '房間成員',
+                  ),
                   onPressed: _showMissionRoomMembers,
                 ),
                 PopupMenuButton<_MissionRoomHeaderAction>(
@@ -10013,12 +9977,14 @@ class _ChatScreenState extends State<ChatScreen>
                                       : _pendingAttachments.isNotEmpty
                                       ? Strings.of(context).chaHintSystem
                                       : widget.missionRoom != null
-                                      ? (Localizations.localeOf(
-                                                  context,
-                                                ).languageCode ==
-                                                'en'
-                                            ? 'Message the team…'
-                                            : 'Escribe al equipo…')
+                                      ? AppLocaleResolve.pick(
+                                          AppLocaleResolve.fromLocale(
+                                            Localizations.localeOf(context),
+                                          ),
+                                          es: 'Escribe al equipo…',
+                                          en: 'Message the team…',
+                                          zh: '向團隊發訊息…',
+                                        )
                                       : Strings.of(context).chaHintUser,
                                   hintStyle: TextStyle(
                                     color: colors.textSecondary,
@@ -11011,7 +10977,7 @@ class _MissionRoomAppBarTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).hermes;
-    final english = Localizations.localeOf(context).languageCode == 'en';
+    final localeKind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
     final memberCount = room.memberProfiles.length;
     return Padding(
       key: const ValueKey('mission-room-header'),
@@ -11032,7 +10998,7 @@ class _MissionRoomAppBarTitle extends StatelessWidget {
           ),
           Text(
             '@${room.managerProfile} · manager · $memberCount '
-            '${english ? (memberCount == 1 ? 'member' : 'members') : (memberCount == 1 ? 'miembro' : 'miembros')}',
+            '${AppLocaleResolve.pick(localeKind, es: memberCount == 1 ? 'miembro' : 'miembros', en: memberCount == 1 ? 'member' : 'members', zh: memberCount == 1 ? '位成員' : '位成員')}',
             key: const ValueKey('mission-room-header-subtitle'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -11070,18 +11036,18 @@ class _BotChatAppBarTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).hermes;
-    final english = Localizations.localeOf(context).languageCode == 'en';
+    final localeKind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
     final profile = this.profile;
     final name = profile != null && profile.name.isNotEmpty
         ? profile.name
         : fallbackName;
     final displayName = profile?.botTitle ?? name;
     final statusLabel = switch (activity) {
-      ChatActivityKind.thinking => english ? 'Thinking' : 'Pensando',
-      ChatActivityKind.usingTools => english ? 'Working' : 'Trabajando',
-      ChatActivityKind.responding => english ? 'Responding' : 'Respondiendo',
+      ChatActivityKind.thinking => AppLocaleResolve.pick(localeKind, es: 'Pensando', en: 'Thinking', zh: '思考中'),
+      ChatActivityKind.usingTools => AppLocaleResolve.pick(localeKind, es: 'Trabajando', en: 'Working', zh: '工作中'),
+      ChatActivityKind.responding => AppLocaleResolve.pick(localeKind, es: 'Respondiendo', en: 'Responding', zh: '回應中'),
       ChatActivityKind.awaitingApproval =>
-        english ? 'Approval required' : 'Aprobación requerida',
+        AppLocaleResolve.pick(localeKind, es: 'Aprobación requerida', en: 'Approval required', zh: '需要批准'),
       null => null,
     };
     return Padding(
@@ -11263,7 +11229,7 @@ class _RoomMentionPalette extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).hermes;
-    final english = Localizations.localeOf(context).languageCode == 'en';
+    final localeKind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
     return Container(
       key: const ValueKey('room-mention-palette'),
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 9),
@@ -11335,8 +11301,8 @@ class _RoomMentionPalette extends StatelessWidget {
                       const SizedBox(width: 5),
                       Text(
                         manager
-                            ? (english ? 'Talk' : 'Hablar')
-                            : (english ? 'Assign task' : 'Asignar tarea'),
+                            ? (AppLocaleResolve.pick(localeKind, es: 'Hablar', en: 'Talk', zh: '對話'))
+                            : (AppLocaleResolve.pick(localeKind, es: 'Asignar tarea', en: 'Assign task', zh: '指派工作')),
                         style: TextStyle(
                           color: manager ? colors.accent : colors.textSecondary,
                           fontSize: 11.5,
@@ -11601,7 +11567,7 @@ class _EmptyChatState extends StatelessWidget {
     final colors = Theme.of(context).hermes;
     final room = missionRoom;
     if (room != null) {
-      final english = Localizations.localeOf(context).languageCode == 'en';
+      final localeKind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
       return Center(
         key: const ValueKey('mission-room-empty-state'),
         child: SingleChildScrollView(
@@ -11618,7 +11584,7 @@ class _EmptyChatState extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  english ? 'Start with the team' : 'Empieza con el equipo',
+                  AppLocaleResolve.pick(localeKind, es: 'Empieza con el equipo', en: 'Start with the team', zh: '與團隊開始'),
                   style: TextStyle(
                     fontSize: 19,
                     fontWeight: FontWeight.w700,
@@ -11627,9 +11593,7 @@ class _EmptyChatState extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  english
-                      ? 'Talk to @${room.managerProfile} or mention another bot to assign a task.'
-                      : 'Habla con @${room.managerProfile} o menciona otro bot para asignarle una tarea.',
+                  AppLocaleResolve.pick(localeKind, es: 'Habla con @${room.managerProfile} o menciona otro bot para asignarle una tarea.', en: 'Talk to @${room.managerProfile} or mention another bot to assign a task.', zh: '與 @${room.managerProfile} 對話，或提及另一個機械人以指派工作。'),
                   key: const ValueKey('mission-room-empty-manager'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -12703,13 +12667,13 @@ AssistantOperationalProjection _projectOperationalArtifacts(
   String markdown,
 ) {
   final strings = Localizations.of<Strings>(context, Strings);
-  final isSpanish = Localizations.maybeLocaleOf(context)?.languageCode == 'es';
+  final localeKind = AppLocaleResolve.fromLocale(Localizations.maybeLocaleOf(context));
   return projectAssistantOperationalArtifacts(
     markdown,
     subagentLabel:
         strings?.subagentActivityItem ??
-        (index) => isSpanish ? 'Subagente $index' : 'Subagent $index',
-    resultLabel: strings?.commonResult ?? (isSpanish ? 'Resultado' : 'Result'),
+        (index) => AppLocaleResolve.pick(localeKind, es: 'Subagente $index', en: 'Subagent $index', zh: '子代理 $index'),
+    resultLabel: strings?.commonResult ?? (AppLocaleResolve.pick(localeKind, es: 'Resultado', en: 'Result', zh: '結果')),
   );
 }
 

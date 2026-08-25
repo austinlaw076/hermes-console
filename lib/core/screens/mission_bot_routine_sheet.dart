@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_locale_resolve.dart';
 import '../theme/app_theme.dart';
 import '../widgets/hermes_ui.dart';
 import '../widgets/mission_profile_avatar.dart';
@@ -128,8 +129,42 @@ final class MissionBotRoutineSheetCopy {
     custom: 'Custom',
   );
 
-  static MissionBotRoutineSheetCopy forLocale(Locale locale) =>
-      locale.languageCode == 'en' ? en : es;
+  static const zhHant = MissionBotRoutineSheetCopy(
+    title: '新例行工作',
+    description: '為這個 bot 排程要代你做的事。',
+    botLabel: 'Bot',
+    whatLabel: '做甚麼',
+    whatHint: '描述它應做甚麼',
+    whatRequired: '請描述 bot 應做甚麼。',
+    whenLabel: '何時',
+    customScheduleLabel: 'Cron 表達式',
+    customScheduleHint: '0 9 * * *',
+    customScheduleRequired: '請輸入 cron 表達式。',
+    moreOptions: '更多選項',
+    optionalNameLabel: '可選名稱',
+    optionalNameHint: '例如：早晨簡報',
+    create: '建立例行工作',
+    creating: '建立中…',
+    genericError: '未能建立例行工作。請再試一次。',
+    dailyAtNine: '每日 · 09:00',
+    weekdaysAtNine: '工作日 · 09:00',
+    weeklyMondayAtNine: '每逢星期一 · 09:00',
+    monthlyAtNine: '每月 · 1 號 09:00',
+    hourly: '每小時',
+    everyFifteenMinutes: '每 15 分鐘',
+    custom: '自訂',
+  );
+
+  static MissionBotRoutineSheetCopy forLocale(Locale locale) {
+    switch (AppLocaleResolve.fromLocale(locale)) {
+      case AppLocaleKind.en:
+        return en;
+      case AppLocaleKind.zhHant:
+        return zhHant;
+      case AppLocaleKind.es:
+        return es;
+    }
+  }
 }
 
 class MissionBotRoutineSheet extends StatefulWidget {

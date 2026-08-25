@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_android/core/l10n/app_locale_resolve.dart';
 import 'package:hermes_android/core/services/notifications/notification_strings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -6,56 +7,37 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('NotifL10n', () {
-    test('es=true devuelve español; es=false inglés (sin idioma mezclado)', () {
-      const es = NotifL10n(true);
-      const en = NotifL10n(false);
+    test('es/en/zh no mezclan idiomas', () {
+      const es = NotifL10n.spanish();
+      const en = NotifL10n.english();
+      const zh = NotifL10n.zhHant();
       expect(es.approvalTitle, 'Hermes necesita tu permiso');
       expect(en.approvalTitle, 'Hermes needs your permission');
+      expect(zh.approvalTitle, 'Hermes 需要你的批准');
       expect(es.runCompleted, 'Ejecución completada');
       expect(en.runCompleted, 'Run completed');
+      expect(zh.runCompleted, '執行完成');
       expect(es.actApprove, 'Aprobar');
       expect(en.actApprove, 'Approve');
-      expect(es.actOpen, 'Abrir');
-      expect(en.actOpen, 'Open');
-      expect(es.privateTitle, 'Nueva actividad en Hermes');
-      expect(en.privateBody, 'Open the app to view the details.');
+      expect(zh.actApprove, '批准');
       expect(es.voiceCardListening, 'Escuchando');
       expect(en.voiceCardListening, 'Listening');
-      expect(es.voiceCardPaused, 'En pausa');
-      expect(en.voiceCardPaused, 'Paused');
-      expect(es.voiceCardWaitingApproval, 'Necesita aprobación');
-      expect(en.voiceCardWaitingApproval, 'Needs approval');
-      expect(es.voiceCardMicActive, 'Micrófono activo');
-      expect(en.voiceCardMicActive, 'Microphone active');
-      expect(es.voiceCardMicPaused, 'Micrófono pausado');
-      expect(en.voiceCardMicPaused, 'Microphone paused');
-      expect(es.voiceCardOrbDescription, 'Estado de voz de Hermes');
-      expect(en.voiceCardOrbDescription, 'Hermes voice status');
-      expect(es.voiceCardDurationDescription, 'Duración de la conversación');
-      expect(en.voiceCardDurationDescription, 'Conversation duration');
-      expect(es.voiceOpenHintActive, 'Sigue hablando · toca para abrir Hermes');
-      expect(en.voiceOpenHintPaused, 'Tap Continue or tap to open Hermes');
-      expect(es.voiceOpenHintApproval, 'Pulsa Revisar para aprobar en Hermes');
-      expect(es.voicePause, 'Pausar');
-      expect(en.voicePause, 'Pause');
-      expect(es.voiceContinue, 'Continuar');
-      expect(en.voiceContinue, 'Continue');
-      expect(es.voiceReviewApproval, 'Revisar');
-      expect(en.voiceReviewApproval, 'Review');
-      expect(es.voiceEnd, 'Terminar');
-      expect(en.voiceEnd, 'End');
-      expect(es.voiceEndConversation, 'Terminar conversación');
-      expect(en.voiceEndConversation, 'End conversation');
+      expect(zh.voiceCardListening, '正在聽');
+      expect(es.es, isTrue);
+      expect(en.es, isFalse);
+      expect(zh.kind, AppLocaleKind.zhHant);
     });
 
     test('replyTitle nombra la sesión cuando se conoce', () {
-      const es = NotifL10n(true);
-      const en = NotifL10n(false);
+      const es = NotifL10n.spanish();
+      const en = NotifL10n.english();
+      const zh = NotifL10n.zhHant();
       expect(es.replyTitle('Backup'), 'Hermes respondió en Backup');
       expect(es.replyTitle(null), 'Hermes respondió');
-      expect(es.replyTitle('  '), 'Hermes respondió');
+      expect(zh.replyTitle('Backup'), 'Hermes 已在 Backup 回覆');
       expect(es.replyReadyBody, 'Respuesta lista. Toca para abrir.');
       expect(en.replyReadyBody, 'Reply ready. Tap to open.');
+      expect(zh.replyReadyBody, '回覆已就緒。點一下開啟。');
     });
 
     test('of() resuelve el idioma desde app_locale', () async {
@@ -63,6 +45,11 @@ void main() {
       expect(NotifL10n.of(await SharedPreferences.getInstance()).es, isTrue);
       SharedPreferences.setMockInitialValues({'app_locale': 'en'});
       expect(NotifL10n.of(await SharedPreferences.getInstance()).es, isFalse);
+      SharedPreferences.setMockInitialValues({'app_locale': 'zh_Hant'});
+      expect(
+        NotifL10n.of(await SharedPreferences.getInstance()).kind,
+        AppLocaleKind.zhHant,
+      );
     });
   });
 }

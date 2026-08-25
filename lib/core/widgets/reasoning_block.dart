@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_locale_resolve.dart';
 
 import '../theme/app_theme.dart';
 import '../theme/motion.dart';
@@ -29,11 +30,24 @@ class ReasoningBlock extends StatefulWidget {
 class _ReasoningBlockState extends State<ReasoningBlock> {
   bool _expanded = false;
 
-  bool get _isEs => Localizations.localeOf(context).languageCode == 'es';
+  AppLocaleKind get _kind =>
+      AppLocaleResolve.fromLocale(Localizations.localeOf(context));
 
   String get _title {
-    if (widget.inProgress) return _isEs ? 'Pensando…' : 'Thinking…';
-    return _isEs ? 'Razonamiento' : 'Reasoning';
+    if (widget.inProgress) {
+      return AppLocaleResolve.pick(
+        _kind,
+        es: 'Pensando…',
+        en: 'Thinking…',
+        zh: '思考中…',
+      );
+    }
+    return AppLocaleResolve.pick(
+      _kind,
+      es: 'Razonamiento',
+      en: 'Reasoning',
+      zh: '推理',
+    );
   }
 
   @override

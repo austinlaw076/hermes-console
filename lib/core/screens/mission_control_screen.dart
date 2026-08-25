@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import '../l10n/app_locale_resolve.dart';
 
 import '../../main.dart';
 import '../models/agent_profile.dart';
@@ -763,13 +764,16 @@ class _MissionControlScreenState extends State<MissionControlScreen>
 
   void _showBotChatPinUnavailable() {
     if (!mounted) return;
-    final english = Localizations.localeOf(context).languageCode == 'en';
+    final kind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          english
-              ? 'Bot Chat metadata could not be verified. Refresh the team before sending.'
-              : 'No se pudo verificar el Bot Chat. Actualiza el equipo antes de enviar.',
+          AppLocaleResolve.pick(
+            kind,
+            es: 'No se pudo verificar el Bot Chat. Actualiza el equipo antes de enviar.',
+            en: 'Bot Chat metadata could not be verified. Refresh the team before sending.',
+            zh: '未能核實 Bot Chat 中繼資料。傳送前請先重新整理團隊。',
+          ),
         ),
       ),
     );
@@ -1081,13 +1085,16 @@ class _MissionControlScreenState extends State<MissionControlScreen>
 
   void _showRoomRosterUnavailable() {
     if (!mounted) return;
-    final english = Localizations.localeOf(context).languageCode == 'en';
+    final kind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          english
-              ? 'The authoritative profile roster is unavailable or this manager no longer exists. Refresh or manage profiles first.'
-              : 'El roster autoritativo no está disponible o este manager ya no existe. Actualiza o gestiona los perfiles primero.',
+          AppLocaleResolve.pick(
+            kind,
+            es: 'El roster autoritativo no está disponible o este manager ya no existe. Actualiza o gestiona los perfiles primero.',
+            en: 'The authoritative profile roster is unavailable or this manager no longer exists. Refresh or manage profiles first.',
+            zh: '權威設定檔名單不可用，或此管理員已不存在。請先重新整理或管理設定檔。',
+          ),
         ),
       ),
     );

@@ -197,7 +197,7 @@ void main() {
   });
 
   test('la aprobación usa un estado propio y nunca un botón Continuar', () {
-    const es = NotifL10n(true);
+    const es = NotifL10n.spanish();
     expect(
       es.voiceWaitingApproval,
       'Hermes necesita aprobación · pulsa Revisar',

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../l10n/app_locale_resolve.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
@@ -94,8 +95,10 @@ class _ThemesScreenState extends State<ThemesScreen> {
 
   HermesAppState? get _root =>
       context.findAncestorStateOfType<HermesAppState>();
-  bool get _es => Localizations.localeOf(context).languageCode == 'es';
-  String _t(String es, String en) => _es ? es : en;
+  AppLocaleKind get _localeKind =>
+      AppLocaleResolve.fromLocale(Localizations.localeOf(context));
+  String _t(String es, String en, [String? zh]) =>
+      AppLocaleResolve.pick(_localeKind, es: es, en: en, zh: zh);
 
   Future<void> _select(String id) async {
     final root = _root;

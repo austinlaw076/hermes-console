@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_locale_resolve.dart';
 import '../widgets/mission_profile_avatar.dart';
 
 enum MissionBotTaskPriority { low, normal, high }
@@ -53,8 +54,11 @@ class _MissionBotTaskSheetState extends State<MissionBotTaskSheet> {
   bool _showValidation = false;
   String? _submissionError;
 
-  bool get _english =>
-      Localizations.localeOf(context).languageCode.toLowerCase() == 'en';
+  AppLocaleKind get _kind =>
+      AppLocaleResolve.fromLocale(Localizations.localeOf(context));
+
+  String _t(String es, String en, String zh) =>
+      AppLocaleResolve.pick(_kind, es: es, en: en, zh: zh);
 
   @override
   void dispose() {
@@ -85,17 +89,19 @@ class _MissionBotTaskSheetState extends State<MissionBotTaskSheet> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _submissionError = _english
-            ? 'The task could not be assigned. Try again.'
-            : 'No se pudo encargar la tarea. Inténtalo de nuevo.';
+        _submissionError = _t(
+          'No se pudo encargar la tarea. Inténtalo de nuevo.',
+          'The task could not be assigned. Try again.',
+          '未能指派任務。請再試一次。',
+        );
       });
     }
   }
 
   String _priorityLabel(MissionBotTaskPriority priority) => switch (priority) {
-    MissionBotTaskPriority.low => _english ? 'Low' : 'Baja',
-    MissionBotTaskPriority.normal => _english ? 'Normal' : 'Normal',
-    MissionBotTaskPriority.high => _english ? 'High' : 'Alta',
+    MissionBotTaskPriority.low => _t('Baja', 'Low', '低'),
+    MissionBotTaskPriority.normal => _t('Normal', 'Normal', '一般'),
+    MissionBotTaskPriority.high => _t('Alta', 'High', '高'),
   };
 
   @override
@@ -127,7 +133,7 @@ class _MissionBotTaskSheetState extends State<MissionBotTaskSheet> {
             ),
             const SizedBox(height: 18),
             Text(
-              _english ? 'Assign task' : 'Encargar tarea',
+              _t('Encargar tarea', 'Assign task', '指派任務'),
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -188,14 +194,20 @@ class _MissionBotTaskSheetState extends State<MissionBotTaskSheet> {
               textInputAction: TextInputAction.next,
               maxLength: 160,
               decoration: InputDecoration(
-                labelText: _english ? 'What' : 'Qué',
-                hintText: _english
-                    ? 'What should this bot do?'
-                    : '¿Qué debe hacer este bot?',
+                labelText: _t('Qué', 'What', '做甚麼'),
+                hintText: _t(
+                  '¿Qué debe hacer este bot?',
+                  'What should this bot do?',
+                  '這個 bot 應做甚麼？',
+                ),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return _english ? 'Describe the task.' : 'Describe la tarea.';
+                  return _t(
+                    'Describe la tarea.',
+                    'Describe the task.',
+                    '請描述任務。',
+                  );
                 }
                 return null;
               },
@@ -210,16 +222,22 @@ class _MissionBotTaskSheetState extends State<MissionBotTaskSheet> {
               maxLines: 5,
               maxLength: 1200,
               decoration: InputDecoration(
-                labelText: _english ? 'Why (optional)' : 'Para qué (opcional)',
-                hintText: _english
-                    ? 'Add context or the expected result.'
-                    : 'Añade contexto o el resultado esperado.',
+                labelText: _t(
+                  'Para qué (opcional)',
+                  'Why (optional)',
+                  '原因（可選）',
+                ),
+                hintText: _t(
+                  'Añade contexto o el resultado esperado.',
+                  'Add context or the expected result.',
+                  '補充背景或預期結果。',
+                ),
                 alignLabelWithHint: true,
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              _english ? 'Priority' : 'Prioridad',
+              _t('Prioridad', 'Priority', '優先次序'),
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -269,7 +287,7 @@ class _MissionBotTaskSheetState extends State<MissionBotTaskSheet> {
                         dimension: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(_english ? 'Assign task' : 'Encargar tarea'),
+                    : Text(_t('Encargar tarea', 'Assign task', '指派任務')),
               ),
             ),
           ],

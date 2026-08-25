@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../l10n/app_locale_resolve.dart';
 import '../../services/connection_manager.dart';
 import '../../services/pairing_link.dart';
 import '../../theme/app_theme.dart';
@@ -107,8 +108,9 @@ class _ConnectChooserScreenState extends State<ConnectChooserScreen> {
   }
 
   Future<void> _openInstallGuide() async {
-    final language = Localizations.localeOf(context).languageCode;
-    final path = language == 'en' ? '/en/guia#instalar' : '/guia#instalar';
+    final kind = AppLocaleResolve.fromLocale(Localizations.localeOf(context));
+    // Docs site: ES default, EN under /en. zh_Hant uses EN until a zh guide exists.
+    final path = kind == AppLocaleKind.es ? '/guia#instalar' : '/en/guia#instalar';
     var opened = false;
     try {
       opened = await launchUrl(

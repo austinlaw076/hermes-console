@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_locale_resolve.dart';
+
 import '../../l10n/app_localizations.dart';
 import '../models/kanban.dart';
 import '../theme/app_theme.dart';
@@ -1006,53 +1008,70 @@ class _Notice extends StatelessWidget {
 }
 
 class _KanbanDetailCopy {
-  final bool spanish;
+  final AppLocaleKind _kind;
 
-  const _KanbanDetailCopy._(this.spanish);
+  const _KanbanDetailCopy._(this._kind);
 
-  factory _KanbanDetailCopy.forLocale(String localeName) =>
-      _KanbanDetailCopy._(localeName.toLowerCase().startsWith('es'));
+  factory _KanbanDetailCopy.forLocale(String localeName) {
+    final norm = localeName.toLowerCase().replaceAll('-', '_');
+    final AppLocaleKind kind;
+    if (norm.startsWith('es')) {
+      kind = AppLocaleKind.es;
+    } else if (norm.contains('hant') ||
+        norm.startsWith('zh_hk') ||
+        norm.startsWith('zh_tw') ||
+        norm.startsWith('zh_mo')) {
+      kind = AppLocaleKind.zhHant;
+    } else if (norm.startsWith('zh')) {
+      // zh_Hans / bare zh without Hant → EN catalogue (same as AppLocales).
+      kind = AppLocaleKind.en;
+    } else {
+      kind = AppLocaleKind.en;
+    }
+    return _KanbanDetailCopy._(kind);
+  }
 
-  String get readOnly => spanish
-      ? 'Esta instancia está en modo solo lectura.'
-      : 'This instance is read-only.';
-  String get result => spanish ? 'Resultado' : 'Result';
-  String get latestSummary => spanish ? 'Último resumen' : 'Latest summary';
-  String get diagnostics => spanish ? 'Diagnósticos' : 'Diagnostics';
-  String get dependencies => spanish ? 'Dependencias' : 'Dependencies';
-  String get parents => spanish ? 'Depende de' : 'Depends on';
-  String get children => spanish ? 'Desbloquea' : 'Unblocks';
-  String get blockedBy => spanish ? 'Bloqueada por' : 'Blocked by';
-  String get blocks => spanish ? 'Bloquea' : 'Blocks';
-  String get childResults => spanish ? 'Subtareas' : 'Child tasks';
-  String get comments => spanish ? 'Comentarios' : 'Comments';
+  String _t(String es, String en, [String? zh]) =>
+      AppLocaleResolve.pick(_kind, es: es, en: en, zh: zh);
+
+  String get readOnly => _t('Esta instancia está en modo solo lectura.', 'This instance is read-only.', '此執行個體為唯讀。');
+  String get result => _t('Resultado', 'Result', '結果');
+  String get latestSummary => _t('Último resumen', 'Latest summary', '最新摘要');
+  String get diagnostics => _t('Diagnósticos', 'Diagnostics', '診斷資料');
+  String get dependencies => _t('Dependencias', 'Dependencies', '相依項目');
+  String get parents => _t('Depende de', 'Depends on', '相依於');
+  String get children => _t('Desbloquea', 'Unblocks', '解除阻塞');
+  String get blockedBy => _t('Bloqueada por', 'Blocked by', '受阻於');
+  String get blocks => _t('Bloquea', 'Blocks', '阻塞');
+  String get childResults => _t('Subtareas', 'Child tasks', '子工作');
+  String get comments => _t('Comentarios', 'Comments', '留言');
   String get noComments =>
-      spanish ? 'Todavía no hay comentarios.' : 'No comments yet.';
-  String get someone => spanish ? 'Alguien' : 'Someone';
-  String get addComment => spanish ? 'Añadir comentario' : 'Add a comment';
+      _t('Todavía no hay comentarios.', 'No comments yet.', '暫時未有留言。');
+  String get someone => _t('Alguien', 'Someone', '某人');
+  String get addComment => _t('Añadir comentario', 'Add a comment', '新增留言');
   String get messageWorker =>
-      spanish ? 'Enviar una nota al worker' : 'Message the worker';
-  String get send => spanish ? 'Enviar' : 'Send';
-  String get attachments => spanish ? 'Adjuntos' : 'Attachments';
-  String get noAttachments => spanish ? 'No hay adjuntos.' : 'No attachments.';
+      _t('Enviar una nota al worker', 'Message the worker', '向工作人員發訊息');
+  String get send => _t('Enviar', 'Send', '傳送');
+  String get attachments => _t('Adjuntos', 'Attachments', '附件');
+  String get noAttachments => _t('No hay adjuntos.', 'No attachments.', '沒有附件。');
   String get uploadAttachment =>
-      spanish ? 'Subir adjunto' : 'Upload attachment';
-  String get download => spanish ? 'Descargar' : 'Download';
+      _t('Subir adjunto', 'Upload attachment', '上載附件');
+  String get download => _t('Descargar', 'Download', '下載');
   String get deleteAttachment =>
-      spanish ? 'Eliminar adjunto' : 'Delete attachment';
-  String get runs => spanish ? 'Ejecuciones' : 'Runs';
-  String get run => spanish ? 'Ejecución' : 'Run';
-  String get inspect => spanish ? 'Inspeccionar' : 'Inspect';
-  String get terminate => spanish ? 'Terminar ejecución' : 'Terminate run';
-  String get log => spanish ? 'Log' : 'Log';
-  String get activity => spanish ? 'Actividad' : 'Activity';
-  String get operations => spanish ? 'Operaciones' : 'Operations';
-  String get model => spanish ? 'Modelo de esta tarea' : 'Task model';
+      _t('Eliminar adjunto', 'Delete attachment', '刪除附件');
+  String get runs => _t('Ejecuciones', 'Runs', '執行作業');
+  String get run => _t('Ejecución', 'Run', '執行');
+  String get inspect => _t('Inspeccionar', 'Inspect', '檢查');
+  String get terminate => _t('Terminar ejecución', 'Terminate run', '終止執行');
+  String get log => _t('Log', 'Log', '記錄');
+  String get activity => _t('Actividad', 'Activity', '活動');
+  String get operations => _t('Operaciones', 'Operations', '操作');
+  String get model => _t('Modelo de esta tarea', 'Task model', '任務模型');
   String get inheritModel =>
-      spanish ? 'Heredar del perfil' : 'Inherit from profile';
-  String get reassign => spanish ? 'Reasignar' : 'Reassign';
+      _t('Heredar del perfil', 'Inherit from profile', '繼承自設定檔');
+  String get reassign => _t('Reasignar', 'Reassign', '重新指派');
   String get reclaim =>
-      spanish ? 'Recuperar y reencolar' : 'Reclaim and requeue';
-  String get specify => spanish ? 'Especificar' : 'Specify';
-  String get decompose => spanish ? 'Descomponer' : 'Decompose';
+      _t('Recuperar y reencolar', 'Reclaim and requeue', '收回並重新加入佇列');
+  String get specify => _t('Especificar', 'Specify', '指定');
+  String get decompose => _t('Descomponer', 'Decompose', '分解');
 }
