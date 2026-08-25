@@ -19,6 +19,7 @@ import '../companion/render/spritesheet_renderer.dart';
 import '../widgets/hermes_app_bar.dart';
 import '../widgets/hermes_bot_face.dart';
 import '../widgets/hermes_ui.dart';
+import '../l10n/app_locale_resolve.dart';
 import 'mission_control_copy.dart';
 
 typedef ProfileEditorImagePicker = Future<XFile?> Function();
@@ -128,9 +129,8 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
       _identityTouched && _identitySignature != _baselineIdentitySignature;
   bool get _dirty => _titleDirty || _identityDirty;
 
-  bool get _spanish =>
-      Localizations.localeOf(context).languageCode.toLowerCase() == 'es';
-  String _text(String es, String en) => _spanish ? es : en;
+  AppLocaleKind get _localeKind =>
+      AppLocaleResolve.fromLocale(Localizations.localeOf(context));
 
   @override
   void initState() {
@@ -336,9 +336,11 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            _text(
-              'Usa una imagen PNG, JPEG, WebP o GIF de hasta 15 MB.',
-              'Use a PNG, JPEG, WebP, or GIF image up to 15 MB.',
+            AppLocaleResolve.pick(
+              _localeKind,
+              es: 'Usa una imagen PNG, JPEG, WebP o GIF de hasta 15 MB.',
+              en: 'Use a PNG, JPEG, WebP, or GIF image up to 15 MB.',
+              zh: '使用不超過 15 MB 的 PNG、JPEG、WebP 或 GIF 圖片。',
             ),
           ),
         ),
@@ -445,23 +447,46 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(_text('¿Descartar cambios?', 'Discard changes?')),
+        title: Text(
+          AppLocaleResolve.pick(
+            _localeKind,
+            es: '¿Descartar cambios?',
+            en: 'Discard changes?',
+            zh: '捨棄變更？',
+          ),
+        ),
         content: Text(
-          _text(
-            'La identidad del bot todavía no se ha guardado.',
-            'The bot identity has not been saved yet.',
+          AppLocaleResolve.pick(
+            _localeKind,
+            es: 'La identidad del bot todavía no se ha guardado.',
+            en: 'The bot identity has not been saved yet.',
+            zh: '機械人身份尚未儲存。',
           ),
         ),
         actions: [
           TextButton(
             key: const ValueKey('profile-editor-keep-editing'),
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(_text('Seguir editando', 'Keep editing')),
+            child: Text(
+              AppLocaleResolve.pick(
+                _localeKind,
+                es: 'Seguir editando',
+                en: 'Keep editing',
+                zh: '繼續編輯',
+              ),
+            ),
           ),
           TextButton(
             key: const ValueKey('profile-editor-discard'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(_text('Descartar', 'Discard')),
+            child: Text(
+              AppLocaleResolve.pick(
+                _localeKind,
+                es: 'Descartar',
+                en: 'Discard',
+                zh: '捨棄',
+              ),
+            ),
           ),
         ],
       ),
@@ -499,7 +524,12 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
                     hint: copy.botDisplayNameHint,
                   ),
                   HermesSectionHeader(
-                    _text('Identidad visual', 'Visual identity'),
+                    AppLocaleResolve.pick(
+                      _localeKind,
+                      es: 'Identidad visual',
+                      en: 'Visual identity',
+                      zh: '視覺身份',
+                    ),
                   ),
                   _identitySelector(colors),
                   const SizedBox(height: 8),
@@ -524,7 +554,12 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
     children: [
       _modeTile(
         key: const ValueKey('profile-editor-mode-pet'),
-        label: _text('Mascota', 'Pet'),
+        label: AppLocaleResolve.pick(
+          _localeKind,
+          es: 'Mascota',
+          en: 'Pet',
+          zh: '寵物',
+        ),
         icon: Icons.pets_outlined,
         selected: _mode == _IdentityMode.pet,
         onTap: () => _selectMode(_IdentityMode.pet),
@@ -532,7 +567,12 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
       ),
       _modeTile(
         key: const ValueKey('profile-editor-mode-image'),
-        label: _text('Imagen', 'Image'),
+        label: AppLocaleResolve.pick(
+          _localeKind,
+          es: 'Imagen',
+          en: 'Image',
+          zh: '圖片',
+        ),
         icon: Icons.image_outlined,
         selected: _mode == _IdentityMode.image,
         onTap: () => _selectMode(_IdentityMode.image),
@@ -540,7 +580,12 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
       ),
       _modeTile(
         key: const ValueKey('profile-editor-mode-face'),
-        label: _text('Cara', 'Face'),
+        label: AppLocaleResolve.pick(
+          _localeKind,
+          es: 'Cara',
+          en: 'Face',
+          zh: '臉孔',
+        ),
         icon: Icons.face_outlined,
         selected: _mode == _IdentityMode.face,
         onTap: () => _selectMode(_IdentityMode.face),
@@ -718,7 +763,12 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
     return HermesBotFace(
       visual: visual,
       size: size,
-      semanticLabel: _text('Cara del bot', 'Bot face'),
+      semanticLabel: AppLocaleResolve.pick(
+        _localeKind,
+        es: 'Cara del bot',
+        en: 'Bot face',
+        zh: '機械人臉孔',
+      ),
       animate: true,
     );
   }
@@ -727,9 +777,11 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Text(
-        _text(
-          'PNG, JPEG, WebP o GIF. Se recorta al centro y se guarda cuadrada.',
-          'PNG, JPEG, WebP, or GIF. Center-cropped and saved square.',
+        AppLocaleResolve.pick(
+          _localeKind,
+          es: 'PNG, JPEG, WebP o GIF. Se recorta al centro y se guarda cuadrada.',
+          en: 'PNG, JPEG, WebP, or GIF. Center-cropped and saved square.',
+          zh: 'PNG、JPEG、WebP 或 GIF。會居中裁剪並正方形儲存。',
         ),
         style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
       ),
@@ -740,8 +792,18 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
         icon: Icon(_pickingImage ? Icons.hourglass_top : Icons.photo_library),
         label: Text(
           _pickedAvatar == null && _remoteAvatar == null
-              ? _text('Elegir imagen', 'Choose image')
-              : _text('Cambiar imagen', 'Change image'),
+              ? AppLocaleResolve.pick(
+                  _localeKind,
+                  es: 'Elegir imagen',
+                  en: 'Choose image',
+                  zh: '選擇圖片',
+                )
+              : AppLocaleResolve.pick(
+                  _localeKind,
+                  es: 'Cambiar imagen',
+                  en: 'Change image',
+                  zh: '更換圖片',
+                ),
         ),
       ),
     ],
@@ -750,7 +812,14 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   Widget _buildFaceSection(HermesThemeColors colors) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      HermesSectionHeader(_text('Silueta', 'Silhouette')),
+      HermesSectionHeader(
+        AppLocaleResolve.pick(
+          _localeKind,
+          es: 'Silueta',
+          en: 'Silhouette',
+          zh: '輪廓',
+        ),
+      ),
       Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -771,7 +840,14 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
       profileName: _profileName,
     )!;
     return Tooltip(
-      message: kind ?? _text('Automática', 'Automatic'),
+      message:
+          kind ??
+          AppLocaleResolve.pick(
+            _localeKind,
+            es: 'Automática',
+            en: 'Automatic',
+            zh: '自動',
+          ),
       child: Semantics(
         selected: selected,
         button: true,
@@ -900,9 +976,11 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _text(
-            'También hay una imagen guardada. La mascota tiene prioridad.',
-            'A saved image also exists. The pet takes priority.',
+          AppLocaleResolve.pick(
+            _localeKind,
+            es: 'También hay una imagen guardada. La mascota tiene prioridad.',
+            en: 'A saved image also exists. The pet takes priority.',
+            zh: '亦有一張已儲存的圖片。寵物優先。',
           ),
           style: TextStyle(color: colors.textPrimary, fontSize: 12.5),
         ),
@@ -912,7 +990,14 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
           onPressed: _remoteAvatar == null
               ? null
               : () => _changeIdentity(() => _mode = _IdentityMode.image),
-          child: Text(_text('Usar imagen', 'Use image')),
+          child: Text(
+            AppLocaleResolve.pick(
+              _localeKind,
+              es: 'Usar imagen',
+              en: 'Use image',
+              zh: '使用圖片',
+            ),
+          ),
         ),
       ],
     ),
@@ -1006,13 +1091,25 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
               children: [
                 Text(
                   _uncertain
-                      ? _text(
-                          'Estado incierto: revisa y vuelve a guardar.',
-                          'Uncertain state: review and save again.',
+                      ? AppLocaleResolve.pick(
+                          _localeKind,
+                          es: 'Estado incierto: revisa y vuelve a guardar.',
+                          en: 'Uncertain state: review and save again.',
+                          zh: '狀態不確定：請檢查並重新儲存。',
                         )
                       : _dirty
-                      ? _text('Cambios sin guardar', 'Unsaved changes')
-                      : _text('Sin cambios pendientes', 'No pending changes'),
+                      ? AppLocaleResolve.pick(
+                          _localeKind,
+                          es: 'Cambios sin guardar',
+                          en: 'Unsaved changes',
+                          zh: '有未儲存的變更',
+                        )
+                      : AppLocaleResolve.pick(
+                          _localeKind,
+                          es: 'Sin cambios pendientes',
+                          en: 'No pending changes',
+                          zh: '沒有待處理的變更',
+                        ),
                   key: ValueKey(
                     _uncertain
                         ? 'profile-editor-uncertain'
@@ -1035,7 +1132,14 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
                 const SizedBox(height: 7),
                 HermesPrimaryButton(
                   key: const ValueKey('profile-editor-save'),
-                  label: _saving ? _text('Guardando…', 'Saving…') : copy.save,
+                  label: _saving
+                      ? AppLocaleResolve.pick(
+                          _localeKind,
+                          es: 'Guardando…',
+                          en: 'Saving…',
+                          zh: '正在儲存…',
+                        )
+                      : copy.save,
                   icon: _saving ? Icons.sync : Icons.check,
                   onTap: _saving || !_dirty ? null : _save,
                 ),

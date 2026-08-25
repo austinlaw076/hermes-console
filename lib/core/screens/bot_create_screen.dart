@@ -32,6 +32,7 @@ import '../widgets/hermes_app_bar.dart';
 import '../widgets/hermes_bot_face.dart';
 import '../widgets/hermes_premium_ui.dart';
 import '../widgets/hermes_ui.dart';
+import '../l10n/app_locale_resolve.dart';
 import 'mission_control_copy.dart';
 
 typedef BotCreateImagePicker = Future<XFile?> Function();
@@ -207,9 +208,8 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
       _identityMode != _CreateIdentityMode.face ||
       _blobatar.wire != 'blobatar';
 
-  bool get _spanish =>
-      Localizations.localeOf(context).languageCode.toLowerCase() == 'es';
-  String _text(String es, String en) => _spanish ? es : en;
+  AppLocaleKind get _localeKind =>
+      AppLocaleResolve.fromLocale(Localizations.localeOf(context));
 
   /// Origen del catálogo (skills y modelos): el profile clonado, o el
   /// principal cuando se crea vacío — igual que `capSource` en Desktop.
@@ -414,9 +414,11 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            _text(
-              'Usa una imagen PNG, JPEG, WebP o GIF de hasta 15 MB.',
-              'Use a PNG, JPEG, WebP, or GIF image up to 15 MB.',
+            AppLocaleResolve.pick(
+              _localeKind,
+              es: 'Usa una imagen PNG, JPEG, WebP o GIF de hasta 15 MB.',
+              en: 'Use a PNG, JPEG, WebP, or GIF image up to 15 MB.',
+              zh: '使用不超過 15 MB 的 PNG、JPEG、WebP 或 GIF 圖片。',
             ),
           ),
         ),
@@ -673,17 +675,24 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
           _ => false,
         };
         _error = switch (error) {
-          final _BotCreateIdentityFailure failure when failure.uncertain => _text(
-            'El bot existe, pero su identidad quedó en estado incierto. Revísala y vuelve a intentar.',
-            'The bot exists, but its identity is uncertain. Review it and try again.',
+          final _BotCreateIdentityFailure failure when failure.uncertain =>
+            AppLocaleResolve.pick(
+              _localeKind,
+              es: 'El bot existe, pero su identidad quedó en estado incierto. Revísala y vuelve a intentar.',
+              en: 'The bot exists, but its identity is uncertain. Review it and try again.',
+              zh: '機械人已存在，但其身份處於不確定狀態。請檢查後再試。',
+            ),
+          _BotCreateIdentityFailure() => AppLocaleResolve.pick(
+            _localeKind,
+            es: 'El bot existe, pero no se pudo aplicar su identidad. Corrige el problema y vuelve a intentar.',
+            en: 'The bot exists, but its identity could not be applied. Fix the issue and try again.',
+            zh: '機械人已存在，但無法套用其身份。請修正問題後再試。',
           ),
-          _BotCreateIdentityFailure() => _text(
-            'El bot existe, pero no se pudo aplicar su identidad. Corrige el problema y vuelve a intentar.',
-            'The bot exists, but its identity could not be applied. Fix the issue and try again.',
-          ),
-          FormatException() => _text(
-            'Elige una identidad válida antes de crear el bot.',
-            'Choose a valid identity before creating the bot.',
+          FormatException() => AppLocaleResolve.pick(
+            _localeKind,
+            es: 'Elige una identidad válida antes de crear el bot.',
+            en: 'Choose a valid identity before creating the bot.',
+            zh: '請在建立機械人前選擇有效身份。',
           ),
           _ => copy.createAgentError(humanizeApiError(error)),
         };
@@ -699,28 +708,53 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
       builder: (dialogContext) => AlertDialog(
         key: const ValueKey('bot-create-discard-dialog'),
         scrollable: true,
-        title: Text(_text('¿Descartar cambios?', 'Discard changes?')),
+        title: Text(
+          AppLocaleResolve.pick(
+            _localeKind,
+            es: '¿Descartar cambios?',
+            en: 'Discard changes?',
+            zh: '捨棄變更？',
+          ),
+        ),
         content: Text(
           _profileCreated
-              ? _text(
-                  'El perfil ya existe, pero su configuración visual no terminó. Si sales, no se abrirá su chat automático.',
-                  'The profile already exists, but its visual setup is incomplete. Leaving will not open its automatic chat.',
+              ? AppLocaleResolve.pick(
+                  _localeKind,
+                  es: 'El perfil ya existe, pero su configuración visual no terminó. Si sales, no se abrirá su chat automático.',
+                  en: 'The profile already exists, but its visual setup is incomplete. Leaving will not open its automatic chat.',
+                  zh: '設定檔已存在，但其視覺設定尚未完成。如離開，不會開啟自動聊天。',
                 )
-              : _text(
-                  'Perderás la configuración de este bot.',
-                  'You will lose this bot setup.',
+              : AppLocaleResolve.pick(
+                  _localeKind,
+                  es: 'Perderás la configuración de este bot.',
+                  en: 'You will lose this bot setup.',
+                  zh: '你將失去這個機械人的設定。',
                 ),
         ),
         actions: [
           TextButton(
             key: const ValueKey('bot-create-keep-editing'),
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(_text('Seguir editando', 'Keep editing')),
+            child: Text(
+              AppLocaleResolve.pick(
+                _localeKind,
+                es: 'Seguir editando',
+                en: 'Keep editing',
+                zh: '繼續編輯',
+              ),
+            ),
           ),
           TextButton(
             key: const ValueKey('bot-create-discard'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(_text('Descartar', 'Discard')),
+            child: Text(
+              AppLocaleResolve.pick(
+                _localeKind,
+                es: 'Descartar',
+                en: 'Discard',
+                zh: '捨棄',
+              ),
+            ),
           ),
         ],
       ),
@@ -793,7 +827,12 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
                     maxLines: 4,
                   ),
                   HermesSectionHeader(
-                    _text('Identidad visual', 'Visual identity'),
+                    AppLocaleResolve.pick(
+                      _localeKind,
+                      es: 'Identidad visual',
+                      en: 'Visual identity',
+                      zh: '視覺身份',
+                    ),
                   ),
                   _identitySelector(colors),
                   const SizedBox(height: 8),
@@ -930,7 +969,12 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
     children: [
       _modeTile(
         key: const ValueKey('bot-create-mode-pet'),
-        label: _text('Mascota', 'Pet'),
+        label: AppLocaleResolve.pick(
+          _localeKind,
+          es: 'Mascota',
+          en: 'Pet',
+          zh: '寵物',
+        ),
         icon: Icons.pets_outlined,
         selected: _identityMode == _CreateIdentityMode.pet,
         onTap: () => _selectIdentityMode(_CreateIdentityMode.pet),
@@ -938,7 +982,12 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
       ),
       _modeTile(
         key: const ValueKey('bot-create-mode-image'),
-        label: _text('Imagen', 'Image'),
+        label: AppLocaleResolve.pick(
+          _localeKind,
+          es: 'Imagen',
+          en: 'Image',
+          zh: '圖片',
+        ),
         icon: Icons.image_outlined,
         selected: _identityMode == _CreateIdentityMode.image,
         onTap: () => _selectIdentityMode(_CreateIdentityMode.image),
@@ -946,7 +995,12 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
       ),
       _modeTile(
         key: const ValueKey('bot-create-mode-face'),
-        label: _text('Cara', 'Face'),
+        label: AppLocaleResolve.pick(
+          _localeKind,
+          es: 'Cara',
+          en: 'Face',
+          zh: '臉孔',
+        ),
         icon: Icons.face_outlined,
         selected: _identityMode == _CreateIdentityMode.face,
         onTap: () => _selectIdentityMode(_CreateIdentityMode.face),
@@ -1092,7 +1146,12 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
     return HermesBotFace(
       visual: visual,
       size: size,
-      semanticLabel: _text('Cara del bot', 'Bot face'),
+      semanticLabel: AppLocaleResolve.pick(
+        _localeKind,
+        es: 'Cara del bot',
+        en: 'Bot face',
+        zh: '機械人臉孔',
+      ),
       animate: true,
     );
   }
@@ -1101,9 +1160,11 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Text(
-        _text(
-          'PNG, JPEG, WebP o GIF. Se recorta al centro y se guarda cuadrada.',
-          'PNG, JPEG, WebP, or GIF. Center-cropped and saved square.',
+        AppLocaleResolve.pick(
+          _localeKind,
+          es: 'PNG, JPEG, WebP o GIF. Se recorta al centro y se guarda cuadrada.',
+          en: 'PNG, JPEG, WebP, or GIF. Center-cropped and saved square.',
+          zh: 'PNG、JPEG、WebP 或 GIF。會居中裁剪並正方形儲存。',
         ),
         style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
       ),
@@ -1114,8 +1175,18 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
         icon: Icon(_pickingImage ? Icons.hourglass_top : Icons.photo_library),
         label: Text(
           _pickedAvatar == null
-              ? _text('Elegir imagen', 'Choose image')
-              : _text('Cambiar imagen', 'Change image'),
+              ? AppLocaleResolve.pick(
+                  _localeKind,
+                  es: 'Elegir imagen',
+                  en: 'Choose image',
+                  zh: '選擇圖片',
+                )
+              : AppLocaleResolve.pick(
+                  _localeKind,
+                  es: 'Cambiar imagen',
+                  en: 'Change image',
+                  zh: '更換圖片',
+                ),
         ),
       ),
     ],
@@ -1124,7 +1195,14 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
   Widget _buildFaceSection(HermesThemeColors colors) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      HermesSectionHeader(_text('Silueta', 'Silhouette')),
+      HermesSectionHeader(
+        AppLocaleResolve.pick(
+          _localeKind,
+          es: 'Silueta',
+          en: 'Silhouette',
+          zh: '輪廓',
+        ),
+      ),
       Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -1145,7 +1223,14 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
       profileName: slugPlaceholder,
     )!;
     return Tooltip(
-      message: kind ?? _text('Automática', 'Automatic'),
+      message:
+          kind ??
+          AppLocaleResolve.pick(
+            _localeKind,
+            es: 'Automática',
+            en: 'Automatic',
+            zh: '自動',
+          ),
       child: Semantics(
         selected: selected,
         button: true,
@@ -1323,20 +1408,31 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
               children: [
                 Text(
                   _uncertain
-                      ? _text(
-                          'Estado incierto: revisa y vuelve a intentar.',
-                          'Uncertain state: review and try again.',
+                      ? AppLocaleResolve.pick(
+                          _localeKind,
+                          es: 'Estado incierto: revisa y vuelve a intentar.',
+                          en: 'Uncertain state: review and try again.',
+                          zh: '狀態不確定：請檢查後再試。',
                         )
                       : _profileCreated
-                      ? _text(
-                          'Perfil creado · falta confirmar la identidad',
-                          'Profile created · identity confirmation pending',
+                      ? AppLocaleResolve.pick(
+                          _localeKind,
+                          es: 'Perfil creado · falta confirmar la identidad',
+                          en: 'Profile created · identity confirmation pending',
+                          zh: '已建立設定檔 · 有待確認身份',
                         )
                       : _dirty
-                      ? _text('Configuración sin crear', 'Uncreated setup')
-                      : _text(
-                          'Completa el nombre para empezar',
-                          'Enter a name to start',
+                      ? AppLocaleResolve.pick(
+                          _localeKind,
+                          es: 'Configuración sin crear',
+                          en: 'Uncreated setup',
+                          zh: '未建立的設定',
+                        )
+                      : AppLocaleResolve.pick(
+                          _localeKind,
+                          es: 'Completa el nombre para empezar',
+                          en: 'Enter a name to start',
+                          zh: '輸入名稱以開始',
                         ),
                   key: ValueKey(
                     _uncertain
@@ -1361,9 +1457,19 @@ class _BotCreateScreenState extends State<BotCreateScreen> {
                 HermesPrimaryButton(
                   key: const ValueKey('bot-create-submit'),
                   label: _busy
-                      ? _text('Creando…', 'Creating…')
+                      ? AppLocaleResolve.pick(
+                          _localeKind,
+                          es: 'Creando…',
+                          en: 'Creating…',
+                          zh: '正在建立…',
+                        )
                       : _profileCreated
-                      ? _text('Reintentar identidad', 'Retry identity')
+                      ? AppLocaleResolve.pick(
+                          _localeKind,
+                          es: 'Reintentar identidad',
+                          en: 'Retry identity',
+                          zh: '重試身份',
+                        )
                       : copy.createAgentSubmit,
                   icon: _busy ? Icons.sync : Icons.smart_toy_outlined,
                   onTap: _valid && !_taken && !_busy ? _create : null,
