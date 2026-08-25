@@ -4924,7 +4924,7 @@ class _ChatScreenState extends State<ChatScreen>
               : MissionRoomTaskPhase.outcomeUnknown;
           await _saveDraftSnapshot(text, attachments);
           if (conflict) {
-            return _reconcileUnknownRoomTask(
+            return await _reconcileUnknownRoomTask(
               room: room,
               intent: intent,
               text: text,
