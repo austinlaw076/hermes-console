@@ -437,6 +437,28 @@ class ConnectionDiagnostics {
       ),
     );
 
+    // 5b. skills toggle + plugins — confirm routes without mutating state.
+    //     Empty PUT body → 400/422 means the write path exists (same pattern
+    //     as the chat probe below). GET /v1/plugins lists installed plugins.
+    results.add(
+      await _probe(
+        'skills_toggle',
+        'PUT',
+        Uri.parse('$base/v1/skills/toggle'),
+        headers: auth,
+        body: <String, Object?>{},
+        okCodes: const {400, 422},
+      ),
+    );
+    results.add(
+      await _probe(
+        'plugins',
+        'GET',
+        Uri.parse('$base/v1/plugins'),
+        headers: auth,
+      ),
+    );
+
     // 6. /v1/chat/completions con body inválido a propósito (messages vacío):
     //    confirma que la ruta existe sin ejecutar el agente. 400 = existe.
     results.add(
@@ -647,10 +669,9 @@ class ConnectionDiagnostics {
         ? CapState.unknown
         : (dashAuth.status == ProbeStatus.ok ? CapState.yes : CapState.no);
 
-    // Escrituras documentadas en API_AUDIT.md para hermes-agent 0.16.x:
-    // sesiones (POST/DELETE individual), cron completo y model/set existen
-    // cuando la lectura correspondiente funciona; memoria/config/skills son
-    // GET-only (Allow: GET verificado) y SOUL/plugins no tienen endpoint.
+    // Base 0.16.x notes kept for sessions/cron inference. hermes-agent ≥0.20
+    // declares skills_toggle + plugins_api (and matching endpoints) via
+    // /v1/capabilities — those must override the old GET-only assumption.
     final sessionsRead = fromProbe(gwSessions);
     final cronRead = fromProbe(find(dash, 'cron'));
     final modelsReadDash = fromProbe(find(dash, 'models/providers'));
@@ -721,8 +742,14 @@ class ConnectionDiagnostics {
         ]),
         serverCaps?.feature('skills_api'),
       ),
-      skillsToggle: CapState.no,
-      skillsInstall: CapState.no,
+      skillsToggle: srv(
+        'skillsToggle',
+        fromProbe(find(gw, 'skills_toggle')),
+        serverCaps?.feature('skills_toggle'),
+      ),
+      // Install still goes through Mobile Bridge scopes; gateway has no
+      // skills_install feature flag yet → leave probe-unknown (not hard NO).
+      skillsInstall: CapState.unknown,
       toolsetsRead: srvEndpoint(
         'toolsetsRead',
         fromProbe(find(gw, 'toolsets')),
@@ -745,7 +772,11 @@ class ConnectionDiagnostics {
         serverCaps?.feature('admin_config_rw'),
       ),
       logsRead: fromProbe(find(dash, 'logs')),
-      pluginsSupported: CapState.no,
+      pluginsSupported: srv(
+        'pluginsSupported',
+        fromProbe(find(gw, 'plugins')),
+        serverCaps?.feature('plugins_api'),
+      ),
       gatewayVersion: version,
       serverModel: serverCaps?.model,
       serverSourced: serverSourced,

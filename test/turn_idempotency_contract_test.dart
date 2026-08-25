@@ -304,6 +304,44 @@ void main() {
     },
   );
 
+  test(
+    'skills_toggle y plugins_api declarados dejan de hardcodearse a NO',
+    () {
+      final caps = ServerCapabilities.tryParse(
+        jsonEncode({
+          'object': 'hermes.api_server.capabilities',
+          'features': {
+            'skills_toggle': true,
+            'plugins_api': true,
+            'skills_api': true,
+          },
+          'endpoints': {
+            'skills_toggle': {'method': 'PUT', 'path': '/v1/skills/toggle'},
+            'plugins': {'method': 'GET', 'path': '/v1/plugins'},
+          },
+        }),
+      );
+      final diagnostics = ConnectionDiagnostics(
+        httpClient: MockClient((_) async => http.Response('unused', 500)),
+      );
+      addTearDown(diagnostics.close);
+
+      final matrix = diagnostics.buildMatrix(
+        const [],
+        const [],
+        null,
+        serverCaps: caps,
+      );
+
+      expect(matrix.skillsToggle, CapState.yes);
+      expect(matrix.pluginsSupported, CapState.yes);
+      expect(matrix.isServerSourced('skillsToggle'), isTrue);
+      expect(matrix.isServerSourced('pluginsSupported'), isTrue);
+      // Without a bridge probe, install stays unknown (not forced NO).
+      expect(matrix.skillsInstall, CapState.unknown);
+    },
+  );
+
   test('capability ausente o corrupta conserva contrato heredado', () async {
     SharedPreferences.setMockInitialValues({
       'capabilities_corrupt': '{no-json',
