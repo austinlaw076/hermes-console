@@ -437,19 +437,9 @@ class ConnectionDiagnostics {
       ),
     );
 
-    // 5b. skills toggle + plugins — confirm routes without mutating state.
-    //     Empty PUT body → 400/422 means the write path exists (same pattern
-    //     as the chat probe below). GET /v1/plugins lists installed plugins.
-    results.add(
-      await _probe(
-        'skills_toggle',
-        'PUT',
-        Uri.parse('$base/v1/skills/toggle'),
-        headers: auth,
-        body: <String, Object?>{},
-        okCodes: const {400, 422},
-      ),
-    );
+    // 5b. Plugins are safe to probe with GET. Skills toggle is intentionally
+    //     not probed: authenticated /v1/capabilities is authoritative and a
+    //     diagnostic flow must not issue a speculative mutating request.
     results.add(
       await _probe(
         'plugins',
