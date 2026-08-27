@@ -74,8 +74,9 @@ class LitertModel {
     final norm = s.replaceAll(RegExp(r'[^a-z0-9]+'), ' ');
     // Señales fuertes: variante tipo "e2b"/"e4b"/"1b"/"1.5b"/"0.6b".
     final mine = _matchTokens.toSet();
-    final variants =
-        mine.where((t) => RegExp(r'^(e\d+b|\d+b|\d+\.\d+b)$').hasMatch(t));
+    final variants = mine.where(
+      (t) => RegExp(r'^(e\d+b|\d+b|\d+\.\d+b)$').hasMatch(t),
+    );
     final familyHit = norm.contains(family.toLowerCase());
     final variantHit =
         variants.isNotEmpty && variants.every((v) => norm.contains(v));
@@ -97,7 +98,7 @@ const List<LitertModel> kLitertCatalog = [
     contextLabel: '32K',
     hfRepo: 'litert-community/gemma-4-E2B-it-litert-lm',
     recommended: true,
-    note: 'Recomendado para la mayoría de móviles',
+    note: 'litertNoteRecommended',
   ),
   LitertModel(
     id: 'gemma-4-e4b',
@@ -108,7 +109,7 @@ const List<LitertModel> kLitertCatalog = [
     contextLabel: '32K',
     hfRepo: 'litert-community/gemma-4-E4B-it-litert-lm',
     recommended: true,
-    note: 'Más capaz, para gama alta (12 GB+)',
+    note: 'litertNoteHighEnd',
   ),
   LitertModel(
     id: 'gemma-3n-e2b',
@@ -136,7 +137,7 @@ const List<LitertModel> kLitertCatalog = [
     minRamGb: 6,
     contextLabel: '4K',
     hfRepo: 'litert-community/Qwen3-0.6B',
-    note: 'Muy ligero, arranca en casi cualquier móvil',
+    note: 'litertNoteLightweight',
   ),
   LitertModel(
     id: 'qwen2.5-1.5b',
@@ -164,7 +165,7 @@ const List<LitertModel> kLitertCatalog = [
     minRamGb: 6,
     contextLabel: '4K',
     hfRepo: 'litert-community/DeepSeek-R1-Distill-Qwen-1.5B',
-    note: 'Razonador destilado',
+    note: 'litertNoteReasoning',
   ),
 ];
 

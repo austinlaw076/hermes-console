@@ -6739,5 +6739,49 @@
   "drawerActiveInstance": "Instancia activa",
   "sesMetricCachedTokens": "tokens en caché",
   "sesMetricCachePercent": "caché %",
-  "languageTraditionalChinese": "Chino tradicional"
+  "languageTraditionalChinese": "Chino tradicional",
+  "litertStoreTitle": "Tienda de modelos GPU",
+  "litertStoreIntro": "Modelos .litertlm que OlliteRT corre en la GPU/NPU del móvil. La descarga ocurre dentro de OlliteRT; aquí ves cuáles caben en tu móvil, los abres para descargar, y usas un modelo servido como modelo activo de Hermes.",
+  "litertRecommended": "Recomendado",
+  "litertInUse": "en uso",
+  "litertDownloaded": "descargado",
+  "litertDownload": "Descargar",
+  "litertUse": "Usar",
+  "litertDownloadHint": "Descárgalo y arráncalo en OlliteRT para poder usarlo.",
+  "litertFits": "cabe",
+  "litertTight": "justo",
+  "litertTooLarge": "no cabe",
+  "litertOpenFailed": "No se pudo abrir {url}",
+  "@litertOpenFailed": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "mdlNoActiveModelTitle": "Sin modelo configurado",
+  "mdlNoActiveModelBody": "Este servidor aún no tiene ningún proveedor de IA con credencial. Configura uno más abajo para poder usarlo.",
+  "mdlConfigNeedsDashboard": "Requiere el Dashboard para configurar",
+  "mdlDashboardOfflineSuffix": "sin conexión al Dashboard",
+  "runsLocalStarting": "Ejecutando en el agente local…",
+  "runsLocalConnectionFailed": "No se pudo conectar con el agente local (Mobile Bridge). Arranca el agente y reintenta.",
+  "litertNoteRecommended": "Recomendado para la mayoría de móviles",
+  "@litertNoteRecommended": {
+    "description": "LiteRT catalog note"
+  },
+  "litertNoteHighEnd": "Más capaz, para gama alta (12 GB+)",
+  "@litertNoteHighEnd": {
+    "description": "LiteRT catalog note"
+  },
+  "litertNoteLightweight": "Muy ligero, arranca en casi cualquier móvil",
+  "@litertNoteLightweight": {
+    "description": "LiteRT catalog note"
+  },
+  "litertNoteReasoning": "Razonador destilado",
+  "@litertNoteReasoning": {
+    "description": "LiteRT catalog note"
+  },
+  "mdlBridgeUnavailable": "El Mobile Bridge no está disponible",
+  "mdlApplyModelFailed": "No se pudo aplicar el modelo",
+  "mdlEditProvider": "Editar proveedor"
 }

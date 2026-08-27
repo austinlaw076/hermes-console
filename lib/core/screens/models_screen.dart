@@ -700,6 +700,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       showReadOnlyNotice(context);
       return;
     }
+    final s = Strings.of(context);
     // Footgun: `model/set` toca el gateway EN EJECUCIÓN (un solo gateway), no
     // solo el perfil seleccionado. Al cambiar el modelo PRINCIPAL con un perfil
     // no-default activo, avisamos de que también cambia el modelo del agente.
@@ -752,7 +753,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       // Dashboard, que es quien las gestiona.
       if (_viaBridge && scope == 'main') {
         final client = await _bridgeMgr.clientFor(widget.connection.id);
-        if (client == null) throw Exception('Bridge no disponible');
+        if (client == null) throw Exception(s.mdlBridgeUnavailable);
         try {
           final r = await client.setModel(
             provider: providerSlug,
@@ -760,8 +761,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
           );
           if (r['ok'] != true) {
             throw Exception(
-              (r['error'] ?? r['message'] ?? 'No se pudo aplicar el modelo')
-                  .toString(),
+              (r['error'] ?? r['message'] ?? s.mdlApplyModelFailed).toString(),
             );
           }
         } finally {
@@ -778,7 +778,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
       }
       await _load();
       if (!mounted) return;
-      final s = Strings.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(successLabel ?? s.mdlActiveModelSet(modelId)),
@@ -787,7 +786,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      final s = Strings.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(s.mdlErrorChangingModel(localizedApiError(s, e))),
@@ -1846,8 +1844,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    // Literal español (candidato a l10n: mdlNoActiveModelTitle).
-                    'Sin modelo configurado',
+                    Strings.of(context).mdlNoActiveModelTitle,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -1856,9 +1853,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    // Literal español (candidato a l10n: mdlNoActiveModelBody).
-                    'Este servidor aún no tiene ningún proveedor de IA con '
-                    'credencial. Configura uno más abajo para poder usarlo.',
+                    Strings.of(context).mdlNoActiveModelBody,
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.35,
@@ -2360,7 +2355,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   color: colors.accent,
                 ),
                 title: Text(
-                  'Editar proveedor',
+                  s.mdlEditProvider,
                   style: TextStyle(fontSize: 12.5, color: colors.accentHover),
                 ),
                 onTap: _setting
@@ -2478,8 +2473,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       // el Dashboard: sin él, la acción se deshabilita con aviso en vez de
       // fingir que funciona y fallar al pulsarla. NO se oculta el proveedor.
       trailing = Tooltip(
-        // Literal español (candidato a l10n: mdlConfigNeedsDashboard).
-        message: 'Requiere el Dashboard para configurar',
+        message: s.mdlConfigNeedsDashboard,
         child: Icon(
           Icons.cloud_off_rounded,
           size: 16,
@@ -2517,7 +2511,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
         iconColor: colors.textDisabled,
         title: provider.name,
         subtitle: _dashboardConfigDown
-            ? '$subtitle · sin conexión al Dashboard'
+            ? '$subtitle · ${s.mdlDashboardOfflineSuffix}'
             : subtitle,
         trailing: trailing,
         // Pulsación larga: ocultar/mostrar este proveedor de la lista de la app.

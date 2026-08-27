@@ -5581,5 +5581,49 @@
   "drawerActiveInstance": "Active instance",
   "sesMetricCachedTokens": "cached tokens",
   "sesMetricCachePercent": "cache %",
-  "languageTraditionalChinese": "Traditional Chinese"
+  "languageTraditionalChinese": "Traditional Chinese",
+  "litertStoreTitle": "GPU model store",
+  "litertStoreIntro": "Models in .litertlm format that OlliteRT runs on the phone GPU/NPU. Downloads happen in OlliteRT's store; here you can see which ones fit your phone, open them to download, and use a served model as Hermes's active model.",
+  "litertRecommended": "Recommended",
+  "litertInUse": "in use",
+  "litertDownloaded": "downloaded",
+  "litertDownload": "Download",
+  "litertUse": "Use",
+  "litertDownloadHint": "Download it and start it in OlliteRT before using it.",
+  "litertFits": "fits",
+  "litertTight": "tight",
+  "litertTooLarge": "does not fit",
+  "litertOpenFailed": "Could not open {url}",
+  "@litertOpenFailed": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "mdlNoActiveModelTitle": "No model configured",
+  "mdlNoActiveModelBody": "This server does not yet have an AI provider with credentials. Configure one below to use it.",
+  "mdlConfigNeedsDashboard": "The Dashboard is required to configure this",
+  "mdlDashboardOfflineSuffix": "no connection to the Dashboard",
+  "runsLocalStarting": "Running on the local agent…",
+  "runsLocalConnectionFailed": "Could not connect to the local agent (Mobile Bridge). Start the agent and try again.",
+  "litertNoteRecommended": "Recommended for most phones",
+  "@litertNoteRecommended": {
+    "description": "LiteRT catalog note"
+  },
+  "litertNoteHighEnd": "More capable; for high-end phones (12 GB+)",
+  "@litertNoteHighEnd": {
+    "description": "LiteRT catalog note"
+  },
+  "litertNoteLightweight": "Lightweight; starts on almost any phone",
+  "@litertNoteLightweight": {
+    "description": "LiteRT catalog note"
+  },
+  "litertNoteReasoning": "Distilled reasoning model",
+  "@litertNoteReasoning": {
+    "description": "LiteRT catalog note"
+  },
+  "mdlBridgeUnavailable": "The Mobile Bridge is unavailable",
+  "mdlApplyModelFailed": "Could not apply the model",
+  "mdlEditProvider": "Edit provider"
 }

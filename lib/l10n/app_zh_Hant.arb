@@ -5581,5 +5581,49 @@
   "drawerActiveInstance": "目前使用中的實例",
   "sesMetricCachedTokens": "已快取 token",
   "sesMetricCachePercent": "快取百分比",
-  "languageTraditionalChinese": "繁體中文"
+  "languageTraditionalChinese": "繁體中文",
+  "litertStoreTitle": "GPU 模型商店",
+  "litertStoreIntro": "OlliteRT 會在手機的 GPU/NPU 上執行 .litertlm 模型。下載會在 OlliteRT 商店內進行；你可在此查看哪些模型適合手機、開啟下載，並將已提供的模型設為 Hermes 使用中的模型。",
+  "litertRecommended": "建議使用",
+  "litertInUse": "使用中",
+  "litertDownloaded": "已下載",
+  "litertDownload": "下載",
+  "litertUse": "使用",
+  "litertDownloadHint": "請先在 OlliteRT 下載並啟動此模型，才可使用。",
+  "litertFits": "適合",
+  "litertTight": "剛好",
+  "litertTooLarge": "不適合",
+  "litertOpenFailed": "未能開啟 {url}",
+  "@litertOpenFailed": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "mdlNoActiveModelTitle": "尚未設定模型",
+  "mdlNoActiveModelBody": "此伺服器尚未有已設定憑證的 AI 供應商。請在下方設定後使用。",
+  "mdlConfigNeedsDashboard": "需要 Dashboard 才能設定",
+  "mdlDashboardOfflineSuffix": "無法連線至 Dashboard",
+  "runsLocalStarting": "正在本機代理執行…",
+  "runsLocalConnectionFailed": "未能連線至本機代理（Mobile Bridge）。請啟動代理後再試。",
+  "litertNoteRecommended": "建議使用",
+  "@litertNoteRecommended": {
+    "description": "LiteRT catalog note"
+  },
+  "litertNoteHighEnd": "效能較強，適合高階手機（12 GB 以上）",
+  "@litertNoteHighEnd": {
+    "description": "LiteRT catalog note"
+  },
+  "litertNoteLightweight": "極輕量，大部份手機都能啟動",
+  "@litertNoteLightweight": {
+    "description": "LiteRT catalog note"
+  },
+  "litertNoteReasoning": "蒸餾推理模型",
+  "@litertNoteReasoning": {
+    "description": "LiteRT catalog note"
+  },
+  "mdlBridgeUnavailable": "Mobile Bridge 無法使用",
+  "mdlApplyModelFailed": "未能套用模型",
+  "mdlEditProvider": "編輯供應商"
 }
