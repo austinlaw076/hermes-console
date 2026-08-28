@@ -85,6 +85,30 @@ void main() {
     },
   );
 
+  test('app_zh is derived deterministically from app_zh_Hant except @@locale', () {
+    final zhHant = _readCatalog('lib/l10n/app_zh_Hant.arb');
+    final zh = _readCatalog('lib/l10n/app_zh.arb');
+
+    expect(zh['@@locale'], 'zh');
+    expect(zhHant['@@locale'], 'zh_Hant');
+
+    final zhHantValues = Map<String, dynamic>.fromEntries(
+      zhHant.entries.where((e) => !e.key.startsWith('@') && !e.key.startsWith('_')),
+    );
+    final zhValues = Map<String, dynamic>.fromEntries(
+      zh.entries.where((e) => !e.key.startsWith('@') && !e.key.startsWith('_')),
+    );
+
+    expect(zhValues.keys, unorderedEquals(zhHantValues.keys));
+    for (final entry in zhHantValues.entries) {
+      expect(
+        zhValues[entry.key],
+        entry.value,
+        reason: 'app_zh["${entry.key}"] must match app_zh_Hant',
+      );
+    }
+  });
+
   test(
     'Notificaciones conserva la misma mayúscula inicial que cada pantalla',
     () {

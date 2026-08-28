@@ -5611,15 +5611,15 @@
   "@litertNoteRecommended": {
     "description": "LiteRT catalog note"
   },
-  "litertNoteHighEnd": "效能較強，適合高階手機 (12 GB 以上)",
+  "litertNoteHighEnd": "效能較強，適合高階手機（12 GB 以上）",
   "@litertNoteHighEnd": {
     "description": "LiteRT catalog note"
   },
-  "litertNoteLightweight": "極輕量，大部份手機都執行到",
+  "litertNoteLightweight": "極輕量，大部份手機都能啟動",
   "@litertNoteLightweight": {
     "description": "LiteRT catalog note"
   },
-  "litertNoteReasoning": "蒸馏推理模型",
+  "litertNoteReasoning": "蒸餾推理模型",
   "@litertNoteReasoning": {
     "description": "LiteRT catalog note"
   },
