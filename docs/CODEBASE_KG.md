@@ -1,10 +1,10 @@
 # Codebase KG entrypoint (mandatory)
 
-**Status:** binding for humans and agents  
-**Bundle:** Hermes skills `codebase-kg`  
-**Clone (this fleet):** `/home/austin/Projects/hermes-console`  
-**Human map:** `~/.hermes/wikis/hermes-console/`  
-**Domain glossary:** [`../CONTEXT.md`](../CONTEXT.md)  
+**Status:** binding for humans and agents
+**Bundle:** Hermes skills `codebase-kg`
+**Clone (this fleet):** `<clone>`
+**Human map:** `~/.hermes/wikis/hermes-console/`
+**Domain glossary:** [`../CONTEXT.md`](../CONTEXT.md)
 **Live graph:** `.codegraph/` via CLI `codegraph`
 
 ## Rule
@@ -21,7 +21,7 @@ Do **not** treat `docs/ARCHITECTURE.md` alone as SoT — it still reflects an ea
 ## Commands
 
 ```bash
-cd /home/austin/Projects/hermes-console   # or your clone
+cd <clone>   # or your clone
 
 codegraph status
 # if missing/stale:

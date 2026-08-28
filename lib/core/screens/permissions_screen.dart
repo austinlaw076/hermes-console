@@ -487,7 +487,10 @@ class _ActivityList extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                relativeTime(e.ts),
+                relativeTime(
+                  e.ts,
+                  languageCode: Localizations.localeOf(context).languageCode,
+                ),
                 style: TextStyle(fontSize: 10.5, color: colors.textDisabled),
               ),
             ],

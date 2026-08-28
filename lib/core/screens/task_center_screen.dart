@@ -735,7 +735,12 @@ class _RunCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          relativeTime(record.createdAt),
+                          relativeTime(
+                            record.createdAt,
+                            languageCode: Localizations.localeOf(
+                              context,
+                            ).languageCode,
+                          ),
                           style: TextStyle(
                             fontSize: 10.5,
                             color: colors.textSecondary,

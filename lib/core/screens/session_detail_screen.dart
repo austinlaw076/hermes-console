@@ -865,7 +865,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen>
                 const SizedBox(height: 10),
                 Text(
                   '${widget.connection.label} · '
-                  '${str.sesLastActivity(relativeTime(s.lastActivityAt))}'
+                  '${str.sesLastActivity(relativeTime(s.lastActivityAt, languageCode: Localizations.localeOf(context).languageCode))}'
                   '${s.source.isNotEmpty ? ' · ${s.source}' : ''}',
                   style: TextStyle(fontSize: 10.5, color: colors.textSecondary),
                 ),
@@ -1344,7 +1344,12 @@ class _MessageTile extends StatelessWidget {
                   const Spacer(),
                   if (ts is num && ts > 0)
                     Text(
-                      relativeTime(ts.toDouble()),
+                      relativeTime(
+                        ts.toDouble(),
+                        languageCode: Localizations.localeOf(
+                          context,
+                        ).languageCode,
+                      ),
                       style: TextStyle(
                         fontSize: 9.5,
                         color: colors.textDisabled,

@@ -468,7 +468,12 @@ class _RunTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      relativeTime(record.createdAt),
+                      relativeTime(
+                        record.createdAt,
+                        languageCode: Localizations.localeOf(
+                          context,
+                        ).languageCode,
+                      ),
                       style: TextStyle(
                         fontSize: 10.5,
                         color: colors.textSecondary,
@@ -1131,7 +1136,7 @@ class _RunDetailScreenState extends State<RunDetailScreen> {
                   },
                   child: Text(
                     '${widget.record.runId} · '
-                    '${relativeTime(widget.record.createdAt)}',
+                    '${relativeTime(widget.record.createdAt, languageCode: Localizations.localeOf(context).languageCode)}',
                     style: TextStyle(fontSize: 10, color: colors.textDisabled),
                   ),
                 ),
