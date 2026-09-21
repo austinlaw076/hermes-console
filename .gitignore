@@ -81,3 +81,4 @@ releases/
 /.serena/
 /.rollback-snapshots/
 /docs/agent-handoffs/
+# QA apply script (local)

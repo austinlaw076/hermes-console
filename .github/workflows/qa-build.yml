@@ -1,0 +1,102 @@
+name: Build QA Application
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '.github/**'
+      - 'docs/**'
+      - '*.md'
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: false
+        default: 'qa-debug'
+        type: choice
+        options:
+          - qa-debug
+          - qa-release
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: qa-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-qa:
+    name: Build QA APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout origin/main
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.1'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          flutter pub get --enforce-lockfile
+
+      - name: Build QA APK
+        run: |
+          echo "Building QA flavor..."
+          flutter build apk --debug --flavor qa
+
+      - name: Verify APK
+        run: |
+          APK_PATH="build/app/outputs/flutter-apk/app-qa-debug.apk"
+          if [ -f "$APK_PATH" ]; then
+            APK_SIZE=$(du -sh "$APK_PATH" | cut -f1)
+            echo "✅ QA APK built successfully ($APK_SIZE)"
+            ls -lh "$APK_PATH"
+          else
+            echo "❌ QA APK not found at $APK_PATH"
+            exit 1
+          fi
+
+      - name: Upload QA APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hermes-qa-apk
+          path: build/app/outputs/flutter-apk/app-qa-debug.apk
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Generate SHA256
+        run: |
+          sha256sum build/app/outputs/flutter-apk/app-qa-debug.apk > build/app/outputs/flutter-apk/app-qa-debug.apk.sha256
+          echo "SHA256:"
+          cat build/app/outputs/flutter-apk/app-qa-debug.apk.sha256
+
+      - name: Upload SHA256 checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: hermes-qa-checksum
+          path: build/app/outputs/flutter-apk/app-qa-debug.apk.sha256
+          retention-days: 7
+
+      - name: Summary
+        run: |
+          echo "## ✅ QA APK Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact:** hermes-qa-apk" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Download the artifact from the Actions tab." >> $GITHUB_STEP_SUMMARY
+          echo "Then install locally: \`./scripts/install_debug_apk.sh --build\`" >> $GITHUB_STEP_SUMMARY
