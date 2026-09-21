@@ -1,0 +1,83 @@
+name: Sync Upstream and Rebase
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-upstream:
+    name: Fetch upstream, merge/rebase, and push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout origin/main
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Configure upstream remote
+        run: |
+          git remote add upstream https://github.com/xP3ta/hermes-console.git || true
+          git fetch upstream main
+
+      - name: Attempt merge/rebase
+        id: merge
+        run: |
+          git checkout main
+          git stash 2>/dev/null || true
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+          git fetch upstream main
+
+          if git merge upstream/main --no-edit --no-ff 2>/dev/null; then
+            echo "merge_status=clean" >> $GITHUB_OUTPUT
+          elif git rebase upstream/main 2>/dev/null; then
+            echo "merge_status=clean" >> $GITHUB_OUTPUT
+          else
+            if git diff --name-only --diff-filter=U | grep -q .; then
+              echo "merge_status=conflict" >> $GITHUB_OUTPUT
+              git diff --name-only --diff-filter=U > /tmp/conflicted_files.txt
+              cat /tmp/conflicted_files.txt
+              exit 1
+            else
+              echo "merge_status=error" >> $GITHUB_OUTPUT
+              git merge --abort 2>/dev/null || true
+              exit 1
+            fi
+          fi
+
+      - name: Push clean merge to origin
+        if: steps.merge.outputs.merge_status == 'clean'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync: merge upstream/main $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push origin main --force-with-lease
+
+      - name: Trigger conflict webhook
+        if: steps.merge.outputs.merge_status == 'conflict'
+        run: |
+          CONFLICTED_FILES=$(cat /tmp/conflicted_files.txt | tr '\n' ',' | sed 's/,$//')
+          curl -s -X POST "${{ secrets.WEBHOOK_URL }}/webhook/upstream-conflict" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.WEBHOOK_SECRET }}" \
+            -d "{\"event\":\"upstream_conflict\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"repo\":\"hermes-console\",\"conflicted_files\":\"${CONFLICTED_FILES}\",\"action\":\"resolve_conflict\"}"
+          echo "Conflict webhook triggered"
+
+      - name: Create PR for conflict
+        if: steps.merge.outputs.merge_status == 'conflict'
+        run: |
+          gh pr create \
+            --title "⚠️ Auto-conflict: upstream/main rebase needed" \
+            --body-file /tmp/conflict_body.md \
+            --base main \
+            --head "auto-conflict-$(date +%s)" \
+            --repo austinlaw076/hermes-console || true
