@@ -1,8 +1,6 @@
 name: Sync Upstream via Pull Request
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 # The workflow may create a branch and a PR, but it must never mutate main.
